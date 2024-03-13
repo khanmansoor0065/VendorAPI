@@ -8,8 +8,9 @@ public class VendorDto {
 	@NotEmpty
 	@Size(min = 4, message = "Name must be min of 3 characters!!")
 	private String name;
-	@Size(min = 10, max = 10, message = "Phone Number must have 10 Digits!!")
-	private String mob;
+	@Min(value=6000000000L,message="Mobile number must start with [6-9] and have 10 digits")
+    @Max(value = 9999999999L,message = "Mobile number must start with [6-9]")
+	private long mob;
 	@Email(message = "Email address is not Valid!!")
 	private String email;
 	@NotEmpty
@@ -38,11 +39,11 @@ public class VendorDto {
 		this.name = name;
 	}
 
-	public String getMob() {
+	public long getMob() {
 		return mob;
 	}
 
-	public void setMob(String mob) {
+	public void setMob(long mob) {
 		this.mob = mob;
 	}
 

@@ -8,12 +8,12 @@ public interface VendorService
 {
    VendorDto addVendor(VendorDto vendorDto, String path, MultipartFile file);
    
-   VendorDto updateVendor(VendorDto vendorDto,Integer vendorId);
+   VendorDto updateVendor(VendorDto vendorDto,String path, MultipartFile file, Integer vendorId);
    
    VendorDto getVendorById(Integer vendorId);
    
    VendorResponse getAllVendor(Integer pageNumber,Integer pageSize,String sortBy,String sortDir,String keyword);
    
-   void deleteVendor(Integer vendorId);
+   void deleteVendor(String path, Integer vendorId);
 
 }

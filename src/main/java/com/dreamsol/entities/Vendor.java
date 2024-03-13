@@ -16,7 +16,7 @@ public class Vendor {
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private int id;
 	private String name;
-	private String mob;
+	private long mob;
 	private String email;
 	private String brief;
 	private String profileImage;
@@ -51,11 +51,11 @@ public class Vendor {
 		this.name = name;
 	}
 
-	public String getMob() {
+	public long getMob() {
 		return mob;
 	}
 
-	public void setMob(String mob) {
+	public void setMob(long mob) {
 		this.mob = mob;
 	}
 

@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import com.dreamsol.entities.Vendor;
 
+
 public interface VendorRepo extends JpaRepository<Vendor,Integer>
 {
 //	@Query("select v from Vendor v where v.name like %:key%")
@@ -15,5 +16,9 @@ public interface VendorRepo extends JpaRepository<Vendor,Integer>
 
 	@Query("select v from Vendor v where v.name like %:key%")
 	Page<Vendor> findByNameContainingIgnoreCase(@Param("key") String name, Pageable p);
+	
+	Vendor  findByMob(long mob);
+	
+	Vendor findByEmail(String email);
 
 }

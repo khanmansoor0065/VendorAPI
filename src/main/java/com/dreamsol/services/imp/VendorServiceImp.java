@@ -1,12 +1,8 @@
 package com.dreamsol.services.imp;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
@@ -41,42 +37,49 @@ public class VendorServiceImp implements VendorService {
 
 	@Autowired
 	private VendorTypeRepo vendorTypeRepo;
-
+	
+	@Autowired
+	private ImageUploadService imageUploadService;
+	
+	Vendor savedVendor;
 
 	@Override
-	public VendorDto addVendor(VendorDto vendorDto,String path,MultipartFile file) {
-		Vendor vendor = this.dtoToVendor(vendorDto);
-		Vendor savedVendor = this.vendorRepo.save(vendor);
-		String fileName=file.getOriginalFilename();
-		String fileNameExtension=fileName.substring(fileName.lastIndexOf('.'));
-		String randomID=UUID.randomUUID().toString();
-		String newFileName=randomID+fileNameExtension;
-		String newFilePath=path+newFileName;
-		File file2=new File(path);
-		if(!file2.exists())  
-		{
-			file2.mkdir();
-		}
-		try
-		{
-			Files.copy(file.getInputStream(),Paths.get(newFilePath));
-			vendor.setProfileImage(newFileName);
-			vendorRepo.save(vendor);
-		}catch(IOException e) {
-			e.printStackTrace();
-		}
-		return this.vendorToDto(savedVendor);
+	public VendorDto addVendor(VendorDto vendorDto, String path, MultipartFile file) {
+	    Vendor vendorByEmail = vendorRepo.findByEmail(vendorDto.getEmail());
+	    Vendor vendorByMobile = vendorRepo.findByMob(vendorDto.getMob());
+
+	    if (Objects.isNull(vendorByEmail) && Objects.isNull(vendorByMobile)) {
+	        Vendor vendor = this.dtoToVendor(vendorDto);
+	        savedVendor = this.vendorRepo.save(vendor);
+	        imageUploadService.uploadImage(path, file, savedVendor);
+	        return vendorDto; 
+	    } else {
+	        if (!Objects.isNull(vendorByEmail)) {
+	            throw new ResourceAlreadyExistsException("Email");
+	        } else {
+	            throw new ResourceAlreadyExistsException("Mobile No.");
+	        }
+	    }
 	}
 
 	@Override
 	@Transactional
-	public VendorDto updateVendor(VendorDto vendorDto, Integer vendorId) {
+	public VendorDto updateVendor(VendorDto vendorDto,String path,MultipartFile file, Integer vendorId) {
 		Vendor vendor = this.vendorRepo.findById(vendorId)
 				.orElseThrow(() -> new ResourceNotFoundException("Vendor", "Id", vendorId));
 		vendor.setName(vendorDto.getName());
 		vendor.setMob(vendorDto.getMob());
 		vendor.setEmail(vendorDto.getEmail());
 		vendor.setBrief(vendorDto.getBrief());
+		String fileName=file.getOriginalFilename();
+		if(fileName!=null)
+		{
+			String oldFileName=vendor.getProfileImage();
+			if(imageUploadService.deleteImage(path, oldFileName))
+			{
+				imageUploadService.uploadImage(path, file, vendor);
+			}
+		}
 		int vendortype_id = vendor.getVendorType().getId();
 		VendorType vendorType = this.vendorTypeRepo.findById(vendortype_id)
 				.orElseThrow(() -> new ResourceNotFoundException("VedorType", "Id", vendortype_id));
@@ -135,10 +138,18 @@ public class VendorServiceImp implements VendorService {
 	}
 
 	@Override
-	public void deleteVendor(Integer vendorId) {
+	public void deleteVendor(String path,Integer vendorId) {
 		Vendor vendor = this.vendorRepo.findById(vendorId)
 				.orElseThrow(() -> new ResourceNotFoundException("Vendor", "Id", vendorId));
-		this.vendorRepo.delete(vendor);
+		String fileName=vendor.getProfileImage();
+		if(fileName==null)
+		{
+			this.vendorRepo.delete(vendor);
+		}
+		else if(imageUploadService.deleteImage(path,fileName))
+		{
+		    this.vendorRepo.delete(vendor);
+		}
 	}
 
 	public Vendor dtoToVendor(VendorDto vendorDto) {
