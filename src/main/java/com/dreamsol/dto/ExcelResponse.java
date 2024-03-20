@@ -1,17 +1,19 @@
 package com.dreamsol.dto;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Getter
+import java.util.List;
+
 @Setter
+@Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class VendorTypeDto {
-	@NotBlank(message = "Vendor Type must not be Empty")
-	private String typeName;
+public class ExcelResponse {
+	private List<VendorDto> correctData;
+	private List<InvalidData> invalidData;
+	private String errorMessage;
 
 }

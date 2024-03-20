@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Base64;
 
+import com.dreamsol.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -19,11 +20,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
-import com.dreamsol.dto.ApiResponse;
-import com.dreamsol.dto.VendorDto;
-import com.dreamsol.dto.VendorResponse;
 import com.dreamsol.exceptions.ResourceAlreadyExistsException;
 import com.dreamsol.services.VendorService;
+import com.dreamsol.services.imp.FileHelper;
+import com.dreamsol.services.imp.HelperService;
 import com.dreamsol.services.imp.ImageUploadService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -45,16 +45,19 @@ public class VendorController
 	
 	@Value("${project.image}")
 	private String path;
+	
+	@Autowired
+	private HelperService helperService;
 		
 	@Operation(
 			summary = "POST operation on vendor",
 			description = "It is used to save Vendors Object in database"
 			)
 	@PostMapping(value = "add",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	public ResponseEntity<VendorDto> addVendor(@Valid @RequestPart("vendorDto") VendorDto vendorDto,
+	public ResponseEntity<VendorResponseDto> addVendor(@Valid @RequestPart("vendorDto") VendorDto vendorDto,
 			 @RequestParam("profileImage") MultipartFile file){
 	try{
-		VendorDto addedVendorDto=this.vendorService.addVendor(vendorDto,path,file);
+		VendorResponseDto addedVendorDto=this.vendorService.addVendor(vendorDto,path,file);
 		return new ResponseEntity<>(addedVendorDto,HttpStatus.CREATED);
 	}catch (ResourceAlreadyExistsException ex) {
 		throw ex;
@@ -65,13 +68,13 @@ public class VendorController
 			description = "It is used to update Vendors Object in database"
 			)
 	@PutMapping(path="update/{vendorId}",consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
-	public ResponseEntity<VendorDto> updateVendor(
+	public ResponseEntity<VendorResponseDto> updateVendor(
 			@Valid  
 			@RequestPart("vendorDto") VendorDto vendorDto,
 			@PathVariable Integer vendorId,
 	        @RequestParam("profileImage") MultipartFile file)
 	{
-	    VendorDto updatedVendor=this.vendorService.updateVendor(vendorDto,path,file, vendorId);
+	    VendorResponseDto updatedVendor=this.vendorService.updateVendor(vendorDto,path,file, vendorId);
 	    return ResponseEntity.ok(updatedVendor);
 	}
 
@@ -105,7 +108,7 @@ public class VendorController
 			description = "It is used to retrieve Vendor Object from database using id"
 			)
 	@GetMapping("list/{vendorId}")
-	public ResponseEntity<VendorDto> getSinglevendor(@PathVariable Integer vendorId)
+	public ResponseEntity<VendorResponseDto> getSinglevendor(@PathVariable Integer vendorId)
 	{
 		return ResponseEntity.ok(this.vendorService.getVendorById(vendorId));
 	}
@@ -120,5 +123,13 @@ public class VendorController
 		                 String encoded=Base64.getEncoder().encodeToString(imageBytes);
 		                 return encoded;
 					}
+	@PostMapping(value = "upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<?> uploadUserExcelFile(@RequestParam("file") MultipartFile file) {
+		if (FileHelper.checkExcelFormat(file)) {
+			ExcelResponse excelResponse = helperService.save(file);
+			return ResponseEntity.ok(excelResponse);
+		}
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Please upload an Excel file only");
+	}
 
 }

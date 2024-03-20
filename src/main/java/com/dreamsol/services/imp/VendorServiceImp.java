@@ -11,11 +11,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import com.dreamsol.exceptions.*;
 import com.dreamsol.dto.ProductDto;
+import com.dreamsol.dto.ProductResponseDto;
 import com.dreamsol.dto.VendorDto;
+import com.dreamsol.dto.ExcelResponse;
 import com.dreamsol.dto.VendorResponse;
+import com.dreamsol.dto.VendorResponseDto;
 import com.dreamsol.dto.VendorTypeDto;
 import com.dreamsol.entities.Product;
 import com.dreamsol.entities.Vendor;
@@ -37,34 +41,38 @@ public class VendorServiceImp implements VendorService {
 
 	@Autowired
 	private VendorTypeRepo vendorTypeRepo;
-	
+
 	@Autowired
 	private ImageUploadService imageUploadService;
-	
+
+	@Autowired
+	private HelperService helperService;
+
 	Vendor savedVendor;
 
 	@Override
-	public VendorDto addVendor(VendorDto vendorDto, String path, MultipartFile file) {
-	    Vendor vendorByEmail = vendorRepo.findByEmail(vendorDto.getEmail());
-	    Vendor vendorByMobile = vendorRepo.findByMob(vendorDto.getMob());
+	public VendorResponseDto addVendor(VendorDto vendorDto, String path, MultipartFile file) {
+		Vendor vendorByEmail = vendorRepo.findByEmail(vendorDto.getEmail());
+		Vendor vendorByMobile = vendorRepo.findByMob(vendorDto.getMob());
 
-	    if (Objects.isNull(vendorByEmail) && Objects.isNull(vendorByMobile)) {
-	        Vendor vendor = this.dtoToVendor(vendorDto);
-	        savedVendor = this.vendorRepo.save(vendor);
-	        imageUploadService.uploadImage(path, file, savedVendor);
-	        return vendorDto; 
-	    } else {
-	        if (!Objects.isNull(vendorByEmail)) {
-	            throw new ResourceAlreadyExistsException("Email");
-	        } else {
-	            throw new ResourceAlreadyExistsException("Mobile No.");
-	        }
-	    }
+		if (Objects.isNull(vendorByEmail) && Objects.isNull(vendorByMobile)) {
+			Vendor vendor = this.dtoToVendor(vendorDto);
+			savedVendor = this.vendorRepo.save(vendor);
+			imageUploadService.uploadImage(path, file, savedVendor);
+			return this.vendorToDto(vendor);
+
+		} else {
+			if (!Objects.isNull(vendorByEmail)) {
+				throw new ResourceAlreadyExistsException("Email");
+			} else {
+				throw new ResourceAlreadyExistsException("Mobile No.");
+			}
+		}
 	}
 
 	@Override
 	@Transactional
-	public VendorDto updateVendor(VendorDto vendorDto,String path,MultipartFile file, Integer vendorId) {
+	public VendorResponseDto updateVendor(VendorDto vendorDto,String path,MultipartFile file, Integer vendorId) {
 		Vendor vendor = this.vendorRepo.findById(vendorId)
 				.orElseThrow(() -> new ResourceNotFoundException("Vendor", "Id", vendorId));
 		vendor.setName(vendorDto.getName());
@@ -86,13 +94,13 @@ public class VendorServiceImp implements VendorService {
 		this.vendorTypeRepo.delete(vendorType);
 		vendor.setVendorType(this.dtoToVendorType(vendorDto.getVendorTypeDto()));
 		Vendor updatedVendor = this.vendorRepo.save(vendor);
-		VendorDto vendorDto1 = this.vendorToDto(updatedVendor);
+		VendorResponseDto vendorDto1 = this.vendorToDto(updatedVendor);
 
 		return vendorDto1;
 	}
 
 	@Override
-	public VendorDto getVendorById(Integer vendorId) {
+	public VendorResponseDto getVendorById(Integer vendorId) {
 		Vendor vendor = this.vendorRepo.findById(vendorId)
 				.orElseThrow(() -> new ResourceNotFoundException("Vendor", "Id", vendorId));
 		return this.vendorToDto(vendor);
@@ -100,7 +108,7 @@ public class VendorServiceImp implements VendorService {
 
 	@Override
 	public VendorResponse getAllVendor(Integer pageNumber, Integer pageSize, String sortBy, String sortDir,
-			String keyword) {
+									   String keyword) {
 		Sort sort = null;
 		if (sortDir.equalsIgnoreCase("asc")) {
 			sort = Sort.by(sortBy).ascending();
@@ -121,7 +129,7 @@ public class VendorServiceImp implements VendorService {
 		List<Vendor> vendors = pageVendor.getContent();
 
 		// Converting the list of Vendor entities to a list of VendorDto objects
-		List<VendorDto> vendorDtos = vendors.stream().map(vendor -> this.vendorToDto(vendor))
+		List<VendorResponseDto> vendorDtos = vendors.stream().map(vendor -> this.vendorToDto(vendor))
 				.collect(Collectors.toList());
 
 		// Creating a VendorResponse object and setting its properties
@@ -148,21 +156,21 @@ public class VendorServiceImp implements VendorService {
 		}
 		else if(imageUploadService.deleteImage(path,fileName))
 		{
-		    this.vendorRepo.delete(vendor);
+			this.vendorRepo.delete(vendor);
 		}
 	}
 
 	public Vendor dtoToVendor(VendorDto vendorDto) {
 		Vendor vendor = this.modelMapper.map(vendorDto, Vendor.class);
 		vendor.setVendorType(this.dtoToVendorType(vendorDto.getVendorTypeDto()));
-		vendor.setProducts(this.dtoToProduct(vendorDto.getProductDto()));
+		vendor.setProducts(this.dtoToProduct(vendorDto.getProductDto(),vendor));
 		return vendor;
 	}
 
-	public VendorDto vendorToDto(Vendor vendor) {
-		VendorDto vendorDto = this.modelMapper.map(vendor, VendorDto.class);
+	public VendorResponseDto vendorToDto(Vendor vendor) {
+		VendorResponseDto vendorDto = this.modelMapper.map(vendor, VendorResponseDto.class);
 		vendorDto.setVendorTypeDto(this.VendorTypeToDto(vendor.getVendorType()));
-		vendorDto.setProductDto(this.productsToDtos(vendor.getProducts()));
+		vendorDto.setProductResponseDto(this.productsToDtos(vendor.getProducts()));
 		return vendorDto;
 	}
 
@@ -176,21 +184,25 @@ public class VendorServiceImp implements VendorService {
 		return vendorTypeDto;
 	}
 
-	public Set<Product> dtoToProduct(Set<ProductDto> productDtos) 
+	public Set<Product> dtoToProduct(Set<ProductDto> productDtos,Vendor vendor)
 	{
 		Set<Product> products=productDtos.stream().map((productDto)->{
-			 Product prod=this.modelMapper.map(productDto, Product.class);
-		      return prod;
+			Product prod=this.modelMapper.map(productDto, Product.class);
+			prod.setVendor(vendor);
+			return prod;
 		}).collect(Collectors.toSet());
 		return products;
 	}
 
-	public Set<ProductDto> productsToDtos(Set<Product> products) 
+	public Set<ProductResponseDto> productsToDtos(Set<Product> products)
 	{
-		Set<ProductDto> productDtos=products.stream().map((product)->{
-			ProductDto prodDto=this.modelMapper.map(product, ProductDto.class);
+		Set<ProductResponseDto> productDtos=products.stream().map((product)->{
+			ProductResponseDto prodDto=this.modelMapper.map(product, ProductResponseDto.class);
 			return prodDto;
 		}).collect(Collectors.toSet());
 		return productDtos;
 	}
+
+
 }
+
