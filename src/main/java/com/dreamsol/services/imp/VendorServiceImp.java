@@ -36,8 +36,7 @@ public class VendorServiceImp implements VendorService {
 	@Autowired
 	private VendorRepo vendorRepo;
 
-	@Autowired
-	private ModelMapper modelMapper;
+	VendorUtility vendorUtility=new VendorUtility();
 
 	@Autowired
 	private VendorTypeRepo vendorTypeRepo;
@@ -50,16 +49,17 @@ public class VendorServiceImp implements VendorService {
 
 	Vendor savedVendor;
 
+
 	@Override
 	public VendorResponseDto addVendor(VendorDto vendorDto, String path, MultipartFile file) {
 		Vendor vendorByEmail = vendorRepo.findByEmail(vendorDto.getEmail());
 		Vendor vendorByMobile = vendorRepo.findByMob(vendorDto.getMob());
 
 		if (Objects.isNull(vendorByEmail) && Objects.isNull(vendorByMobile)) {
-			Vendor vendor = this.dtoToVendor(vendorDto);
-			savedVendor = this.vendorRepo.save(vendor);
+			Vendor vendor = vendorUtility.dtoToVendor(vendorDto);
+			savedVendor = vendorRepo.save(vendor);
 			imageUploadService.uploadImage(path, file, savedVendor);
-			return this.vendorToDto(vendor);
+			return vendorUtility.vendorToDto(vendor);
 
 		} else {
 			if (!Objects.isNull(vendorByEmail)) {
@@ -73,7 +73,7 @@ public class VendorServiceImp implements VendorService {
 	@Override
 	@Transactional
 	public VendorResponseDto updateVendor(VendorDto vendorDto,String path,MultipartFile file, Integer vendorId) {
-		Vendor vendor = this.vendorRepo.findById(vendorId)
+		Vendor vendor = vendorRepo.findById(vendorId)
 				.orElseThrow(() -> new ResourceNotFoundException("Vendor", "Id", vendorId));
 		vendor.setName(vendorDto.getName());
 		vendor.setMob(vendorDto.getMob());
@@ -91,10 +91,10 @@ public class VendorServiceImp implements VendorService {
 		int vendortype_id = vendor.getVendorType().getId();
 		VendorType vendorType = this.vendorTypeRepo.findById(vendortype_id)
 				.orElseThrow(() -> new ResourceNotFoundException("VedorType", "Id", vendortype_id));
-		this.vendorTypeRepo.delete(vendorType);
-		vendor.setVendorType(this.dtoToVendorType(vendorDto.getVendorTypeDto()));
-		Vendor updatedVendor = this.vendorRepo.save(vendor);
-		VendorResponseDto vendorDto1 = this.vendorToDto(updatedVendor);
+		vendorTypeRepo.delete(vendorType);
+		vendor.setVendorType(vendorUtility.dtoToVendorType(vendorDto.getVendorTypeDto()));
+		Vendor updatedVendor = vendorRepo.save(vendor);
+		VendorResponseDto vendorDto1 = vendorUtility.vendorToDto(updatedVendor);
 
 		return vendorDto1;
 	}
@@ -103,7 +103,7 @@ public class VendorServiceImp implements VendorService {
 	public VendorResponseDto getVendorById(Integer vendorId) {
 		Vendor vendor = this.vendorRepo.findById(vendorId)
 				.orElseThrow(() -> new ResourceNotFoundException("Vendor", "Id", vendorId));
-		return this.vendorToDto(vendor);
+		return vendorUtility.vendorToDto(vendor);
 	}
 
 	@Override
@@ -124,15 +124,9 @@ public class VendorServiceImp implements VendorService {
 		} else {
 			pageVendor = this.vendorRepo.findAll(p);
 		}
-
-		// Extracting the list of vendors from the retrieved page
 		List<Vendor> vendors = pageVendor.getContent();
-
-		// Converting the list of Vendor entities to a list of VendorDto objects
-		List<VendorResponseDto> vendorDtos = vendors.stream().map(vendor -> this.vendorToDto(vendor))
+		List<VendorResponseDto> vendorDtos = vendors.stream().map(vendor -> vendorUtility.vendorToDto(vendor))
 				.collect(Collectors.toList());
-
-		// Creating a VendorResponse object and setting its properties
 		VendorResponse vendorResponse = new VendorResponse();
 		vendorResponse.setContent(vendorDtos);
 		vendorResponse.setPageNumber(pageVendor.getNumber());
@@ -140,8 +134,6 @@ public class VendorServiceImp implements VendorService {
 		vendorResponse.setTotalElements(pageVendor.getTotalElements());
 		vendorResponse.setTotalPages(pageVendor.getTotalPages());
 		vendorResponse.setLastPage(pageVendor.isLast());
-
-		// Returning the VendorResponse object
 		return vendorResponse;
 	}
 
@@ -159,50 +151,5 @@ public class VendorServiceImp implements VendorService {
 			this.vendorRepo.delete(vendor);
 		}
 	}
-
-	public Vendor dtoToVendor(VendorDto vendorDto) {
-		Vendor vendor = this.modelMapper.map(vendorDto, Vendor.class);
-		vendor.setVendorType(this.dtoToVendorType(vendorDto.getVendorTypeDto()));
-		vendor.setProducts(this.dtoToProduct(vendorDto.getProductDto(),vendor));
-		return vendor;
-	}
-
-	public VendorResponseDto vendorToDto(Vendor vendor) {
-		VendorResponseDto vendorDto = this.modelMapper.map(vendor, VendorResponseDto.class);
-		vendorDto.setVendorTypeDto(this.VendorTypeToDto(vendor.getVendorType()));
-		vendorDto.setProductResponseDto(this.productsToDtos(vendor.getProducts()));
-		return vendorDto;
-	}
-
-	public VendorType dtoToVendorType(VendorTypeDto vendorTypeDto) {
-		VendorType vendorType = this.modelMapper.map(vendorTypeDto, VendorType.class);
-		return vendorType;
-	}
-
-	public VendorTypeDto VendorTypeToDto(VendorType vendorType) {
-		VendorTypeDto vendorTypeDto = this.modelMapper.map(vendorType, VendorTypeDto.class);
-		return vendorTypeDto;
-	}
-
-	public Set<Product> dtoToProduct(Set<ProductDto> productDtos,Vendor vendor)
-	{
-		Set<Product> products=productDtos.stream().map((productDto)->{
-			Product prod=this.modelMapper.map(productDto, Product.class);
-			prod.setVendor(vendor);
-			return prod;
-		}).collect(Collectors.toSet());
-		return products;
-	}
-
-	public Set<ProductResponseDto> productsToDtos(Set<Product> products)
-	{
-		Set<ProductResponseDto> productDtos=products.stream().map((product)->{
-			ProductResponseDto prodDto=this.modelMapper.map(product, ProductResponseDto.class);
-			return prodDto;
-		}).collect(Collectors.toSet());
-		return productDtos;
-	}
-
-
 }
 

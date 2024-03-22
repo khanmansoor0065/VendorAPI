@@ -1,10 +1,6 @@
 package com.dreamsol.services.imp;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -60,11 +56,17 @@ public class ImageUploadService
 		
 	}
 
-	public InputStream getResource(String path, String fileName) throws FileNotFoundException
-	{
-		String fullPath=path+File.separator+fileName;
-		InputStream inputstream=new FileInputStream(fullPath);
-		return inputstream;
+	public byte[] getFileBytes(String path, String fileName) throws IOException, FileNotFoundException {
+		String filePath = path + "/" + fileName;
+		try (FileInputStream fileInputStream = new FileInputStream(filePath);
+			 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+			byte[] buffer = new byte[1024];
+			int bytesRead;
+			while ((bytesRead = fileInputStream.read(buffer)) != -1) {
+				byteArrayOutputStream.write(buffer, 0, bytesRead);
+			}
+			return byteArrayOutputStream.toByteArray();
+		}
 	}
 
  

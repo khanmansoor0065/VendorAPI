@@ -1,5 +1,8 @@
 package com.dreamsol.services.imp;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -8,23 +11,31 @@ import java.util.List;
 import java.util.Set;
 
 import com.dreamsol.dto.*;
-import org.apache.poi.ss.usermodel.DataFormatter;
-import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
+import com.dreamsol.entities.Product;
+import com.dreamsol.entities.Vendor;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.web.multipart.MultipartFile;
 
 public class FileHelper {
 
+	public static String[] HEADERS = {
+			"name",
+			"mob",
+			"email",
+			"brief",
+			"profileImage",
+			"vendorType",
+			"product"
+	};
+
+	public static String SHEET_NAME = "vendor_data";
+
+
 	public static boolean checkExcelFormat(MultipartFile file) {
 		String contentType = file.getContentType();
-		if (contentType.equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
-			return true;
-		} else {
-			return false;
-		}
+		return contentType.equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 	}
 
 	public static ExcelResponse convertExcelToList(InputStream is) {
@@ -51,6 +62,8 @@ public class FileHelper {
 				Set<ProductDto> listProductDto = new HashSet<>();
 				boolean validRow = true;
 
+				InvalidData invalidDataObj = new InvalidData(); // Create new InvalidData object for each row
+
 				Iterator<Cell> cells = row.iterator();
 				while (cells.hasNext()) {
 					Cell cell = cells.next();
@@ -59,8 +72,12 @@ public class FileHelper {
 							String name = formatter.formatCellValue(cell);
 							if (name == null || name.trim().isEmpty()) {
 								validRow = false;
-								invalidData.add(new InvalidData(rowNumber, cid, "Name cannot be empty"));
+								invalidDataObj.setRowNumber(rowNumber);
+								invalidDataObj.setColumnIndex(cid);
+								invalidDataObj.setErrorMessage("Name cannot be empty");
+								//invalidDataObj.setInvalidName(name); // Include name in InvalidData
 							}
+							invalidDataObj.setInvalidName(name);
 							vendorDto.setName(name);
 							break;
 						case 1:
@@ -69,47 +86,65 @@ public class FileHelper {
 								String mobString = String.valueOf(mob);
 								if (mobString.length() != 10) {
 									validRow = false;
-									invalidData.add(new InvalidData(rowNumber, cid, "Mobile number must be 10 digits"));
+									invalidDataObj.setRowNumber(rowNumber);
+									invalidDataObj.setColumnIndex(cid);
+									invalidDataObj.setErrorMessage("Mobile number must be 10 digits");
+									//	invalidDataObj.setInvalidMob(mob); // Include mob in InvalidData
 								}
+								invalidDataObj.setInvalidMob(mob);
 								vendorDto.setMob(mob);
 							} else {
 								validRow = false;
-								invalidData.add(new InvalidData(rowNumber, cid, "Invalid cell type for mobile number"));
+								invalidDataObj.setRowNumber(rowNumber);
+								invalidDataObj.setColumnIndex(cid);
+								invalidDataObj.setErrorMessage("Invalid cell type for mobile number");
 							}
 							break;
 						case 2:
 							String email = formatter.formatCellValue(cell);
 							if (!isValidEmail(email)) {
 								validRow = false;
-								invalidData.add(new InvalidData(rowNumber, cid, "Invalid email format"));
+								invalidDataObj.setRowNumber(rowNumber);
+								invalidDataObj.setColumnIndex(cid);
+								invalidDataObj.setErrorMessage("Invalid email format");
+								//invalidDataObj.setInvalidEmail(email); // Include email in InvalidData
 							}
+							invalidDataObj.setInvalidEmail(email);
 							vendorDto.setEmail(email);
 							break;
 						case 3:
-							String brief =formatter.formatCellValue(cell);
+							String brief = formatter.formatCellValue(cell);
 							if (brief == null || brief.trim().isEmpty()) {
 								validRow = false;
-								invalidData.add(new InvalidData(rowNumber, cid, "Brief cannot be empty"));
+								invalidDataObj.setRowNumber(rowNumber);
+								invalidDataObj.setColumnIndex(cid);
+								invalidDataObj.setErrorMessage("Brief cannot be empty");
+								//invalidDataObj.setInvalidBrief(brief); // Include brief in InvalidData
 							}
+							invalidDataObj.setInvalidBrief(brief);
 							vendorDto.setBrief(brief);
 							break;
 						case 4:
+							invalidDataObj.setVendorTypeDto(new VendorTypeDto(formatter.formatCellValue(cell)));
 							vendorDto.setVendorTypeDto(new VendorTypeDto(formatter.formatCellValue(cell)));
 							break;
 						case 5:
 							String type = formatter.formatCellValue(cell);
-							String[] typelist = type.split(",");
-							for (String typeName : typelist) {
+							String[] typeList = type.split(",");
+							for (String typeName : typeList) {
 								ProductDto productdto = new ProductDto();
 								productdto.setProductName(typeName);
 								listProductDto.add(productdto);
 							}
+							invalidDataObj.setProductDto(listProductDto);
 							vendorDto.setProductDto(listProductDto);
 							break;
 					}
 					cid++;
 				}
-				if (validRow) {
+				if (!validRow) {
+					invalidData.add(invalidDataObj);
+				} else {
 					correctData.add(vendorDto);
 				}
 				rowNumber++;
@@ -129,6 +164,51 @@ public class FileHelper {
 	private static boolean isValidEmail(String email) {
 		return email != null && email.contains("@");
 	}
+
+
+	public static ByteArrayInputStream dataToExcel(List<Vendor> list) {
+
+		Workbook workbook = new XSSFWorkbook();
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		try {
+
+			Sheet sheet = workbook.createSheet(SHEET_NAME);
+
+			Row row = sheet.createRow(0);
+			for (int i = 0; i < HEADERS.length; i++) {
+				Cell cell = row.createCell(i);
+				cell.setCellValue(HEADERS[i]);
+			}
+
+			int rowIndex = 1;
+			for (Vendor v : list) {
+				Row dataRow = sheet.createRow(rowIndex);
+				rowIndex++;
+				dataRow.createCell(0).setCellValue(v.getName());
+				dataRow.createCell(1).setCellValue(v.getMob());
+				dataRow.createCell(2).setCellValue(v.getEmail());
+				dataRow.createCell(3).setCellValue(v.getBrief());
+				dataRow.createCell(4).setCellValue(v.getProfileImage());
+				dataRow.createCell(5).setCellValue(v.getVendorType().getTypeName());
+				StringBuilder products = new StringBuilder();
+				for (Product product : v.getProducts()) {
+					products.append(product.getProductName()).append(", ");
+				}
+				if (products.length() > 0) {
+					products.setLength(products.length() - 2);
+				}
+				dataRow.createCell(6).setCellValue(products.toString());
+			}
+			workbook.write(out);
+
+			return new ByteArrayInputStream(out.toByteArray());
+
+
+		} catch (IOException e) {
+			e.printStackTrace();
+			return null;
+		}
+
+
 }
-
-
+}

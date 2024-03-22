@@ -19,15 +19,4 @@ public interface VendorService
    VendorResponse getAllVendor(Integer pageNumber,Integer pageSize,String sortBy,String sortDir,String keyword);
    
    void deleteVendor(String path, Integer vendorId);
-//
-//   ResponseEntity<ExcelResponse> uploadFile(MultipartFile file);
-//
-//   boolean isValidName(String name);
-//
-//   boolean isValidMob(long mob);
-//
-//   boolean isValidEmail(String email);
-//
-//   boolean isValidBrief(String brief);
-
 }
