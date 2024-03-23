@@ -39,5 +39,11 @@ public class GlobalExceptionHandler
     public ResponseEntity<String> handleResourceAlreadyExistsException(ResourceAlreadyExistsException ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);
     }
+
+	@ExceptionHandler(EmptyVendorListException.class)
+	@ResponseStatus(HttpStatus.CONFLICT)
+	public ResponseEntity<String> handleEmptyVendorListException(EmptyVendorListException ex) {
+		return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);
+	}
     
 }

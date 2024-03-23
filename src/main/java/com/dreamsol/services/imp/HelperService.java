@@ -3,6 +3,7 @@ package com.dreamsol.services.imp;
 import com.dreamsol.dto.ExcelResponse;
 import com.dreamsol.dto.VendorDto;
 import com.dreamsol.entities.Vendor;
+import com.dreamsol.exceptions.EmptyVendorListException;
 import com.dreamsol.repositories.VendorRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -37,11 +38,22 @@ public class HelperService {
 		return saveResponse;
 	}
 
-	public ByteArrayInputStream getActualData() throws IOException {
-		List<Vendor> all=vendorRepo.findAll();
-		ByteArrayInputStream byteArrayInputStream=FileHelper.dataToExcel(all);
-		return  byteArrayInputStream;
+	public ByteArrayInputStream getActualData(String filter) throws IOException {
+		List<Vendor> filteredVendors;
 
+		if (filter != null && !filter.isEmpty()) {
+			filteredVendors = this.vendorRepo.findByNameLikeOrEmailLike("%" + filter + "%","%" + filter + "%");
+			if(filteredVendors.isEmpty())
+			{
+				throw new EmptyVendorListException("No vendors found for the provided filter: " + filter);
+			}
+		} else {
+			filteredVendors = this.vendorRepo.findAll();
+		}
+
+		ByteArrayInputStream byteArrayInputStream = FileHelper.dataToExcel(filteredVendors);
+		return byteArrayInputStream;
 	}
+
 
 }

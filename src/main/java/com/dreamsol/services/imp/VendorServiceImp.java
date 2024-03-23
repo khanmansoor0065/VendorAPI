@@ -120,7 +120,7 @@ public class VendorServiceImp implements VendorService {
 
 		Page<Vendor> pageVendor;
 		if (keyword != null && !keyword.isEmpty()) {
-			pageVendor = this.vendorRepo.findByNameContainingIgnoreCase("%" + keyword + "%", p);
+			pageVendor = this.vendorRepo.findByNameLikeOrEmailLike("%" + keyword + "%","%" + keyword + "%", p);
 		} else {
 			pageVendor = this.vendorRepo.findAll(p);
 		}

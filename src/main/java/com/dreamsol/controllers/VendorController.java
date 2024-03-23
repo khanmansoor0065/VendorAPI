@@ -3,6 +3,7 @@ package com.dreamsol.controllers;
 import java.io.*;
 
 import com.dreamsol.dto.*;
+import com.dreamsol.exceptions.EmptyVendorListException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
@@ -138,14 +139,20 @@ public class VendorController {
 			description = "It is used to download data from database"
 	)
 	@GetMapping("excel-download")
-	public ResponseEntity<Resource> download() throws IOException {
-		ByteArrayInputStream actualData=helperService.getActualData();
-		InputStreamResource file=new InputStreamResource(actualData);
-		ResponseEntity<Resource> body=ResponseEntity.ok()
-				.header(HttpHeaders.CONTENT_DISPOSITION,"attachment;filename="+"vendor.xlsx")
-				.contentType(MediaType.parseMediaType("application/vnd.ms-excel"))
-				.body(file);
-		return body;
+	public ResponseEntity<Resource> download(
+			@RequestParam(required = false,defaultValue = "") String filter) throws IOException{
+		try {
+			ByteArrayInputStream actualData = helperService.getActualData(filter);
+			InputStreamResource file = new InputStreamResource(actualData);
+			ResponseEntity<Resource> body = ResponseEntity.ok()
+					.header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=" + "vendor.xlsx")
+					.contentType(MediaType.parseMediaType("application/vnd.ms-excel"))
+					.body(file);
+			return body;
+		}catch (EmptyVendorListException ex)
+		{
+			throw ex;
+		}
 	}
 }
 
