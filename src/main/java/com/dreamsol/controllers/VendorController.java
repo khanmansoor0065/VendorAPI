@@ -1,6 +1,7 @@
 package com.dreamsol.controllers;
 
 import java.io.*;
+import java.util.List;
 
 import com.dreamsol.dto.*;
 import com.dreamsol.exceptions.EmptyVendorListException;
@@ -154,5 +155,12 @@ public class VendorController {
 			throw ex;
 		}
 	}
+	@GetMapping("product{productName}")
+	public ResponseEntity<List<VendorResponseDto>> getDetailsByProduct(@RequestParam(value = "productName") String productName)
+	{
+		List<VendorResponseDto> list=vendorService.getDetailsByProduct(productName);
+		return ResponseEntity.ok(list);
+	}
+
 }
 

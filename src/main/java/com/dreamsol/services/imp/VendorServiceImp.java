@@ -1,10 +1,12 @@
 package com.dreamsol.services.imp;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.dreamsol.repositories.ProductRepo;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Sort;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +38,9 @@ public class VendorServiceImp implements VendorService {
 	@Autowired
 	private VendorRepo vendorRepo;
 
+	@Autowired
+	private ProductRepo productRepo;
+
 	VendorUtility vendorUtility=new VendorUtility();
 
 	@Autowired
@@ -46,6 +51,8 @@ public class VendorServiceImp implements VendorService {
 
 	@Autowired
 	private HelperService helperService;
+
+	ModelMapper modelMapper=new ModelMapper();
 
 	Vendor savedVendor;
 
@@ -150,6 +157,31 @@ public class VendorServiceImp implements VendorService {
 		{
 			this.vendorRepo.delete(vendor);
 		}
+	}
+
+	@Override
+	public List<VendorResponseDto> getDetailsByProduct(String productName) {
+		List<Product> pList = productRepo.findByProductName(productName);
+		List<VendorResponseDto> vendorList = new ArrayList<>();
+
+		if (pList.isEmpty()) {
+			throw new EmptyVendorListException("No Product Found");
+		}
+
+		for (Product product : pList) {
+			Vendor vendor = product.getVendor();
+			VendorResponseDto vendorDto = modelMapper.map(vendor, VendorResponseDto.class);
+
+			vendorDto.setVendorTypeDto(modelMapper.map(vendor.getVendorType(), VendorTypeDto.class));
+
+			Set<ProductResponseDto> productResponseDtoSet = vendor.getProducts().stream()
+					.map(productItem -> modelMapper.map(productItem, ProductResponseDto.class))
+					.collect(Collectors.toSet());
+			vendorDto.setProductResponseDto(productResponseDtoSet);
+
+			vendorList.add(vendorDto);
+		}
+		return vendorList;
 	}
 }
 
