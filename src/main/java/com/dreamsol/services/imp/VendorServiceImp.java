@@ -1,35 +1,24 @@
 package com.dreamsol.services.imp;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
-
+import com.dreamsol.dto.*;
+import org.springframework.beans.BeanUtils;
 import com.dreamsol.repositories.ProductRepo;
-import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Sort;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import com.dreamsol.exceptions.*;
-import com.dreamsol.dto.ProductDto;
-import com.dreamsol.dto.ProductResponseDto;
-import com.dreamsol.dto.VendorDto;
-import com.dreamsol.dto.ExcelResponse;
-import com.dreamsol.dto.VendorResponse;
-import com.dreamsol.dto.VendorResponseDto;
-import com.dreamsol.dto.VendorTypeDto;
 import com.dreamsol.entities.Product;
 import com.dreamsol.entities.Vendor;
 import com.dreamsol.entities.VendorType;
 import com.dreamsol.repositories.VendorRepo;
 import com.dreamsol.repositories.VendorTypeRepo;
 import com.dreamsol.services.VendorService;
-
 import jakarta.transaction.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -50,15 +39,13 @@ public class VendorServiceImp implements VendorService {
 	private ImageUploadService imageUploadService;
 
 	@Autowired
-	private HelperService helperService;
-
-	ModelMapper modelMapper=new ModelMapper();
+	private ExcelService helperService;
 
 	Vendor savedVendor;
 
 
 	@Override
-	public VendorResponseDto addVendor(VendorDto vendorDto, String path, MultipartFile file) {
+	public ResponseEntity<VendorResponseDto> addVendor(VendorDto vendorDto, String path, MultipartFile file) {
 		Vendor vendorByEmail = vendorRepo.findByEmail(vendorDto.getEmail());
 		Vendor vendorByMobile = vendorRepo.findByMob(vendorDto.getMob());
 
@@ -66,7 +53,11 @@ public class VendorServiceImp implements VendorService {
 			Vendor vendor = vendorUtility.dtoToVendor(vendorDto);
 			savedVendor = vendorRepo.save(vendor);
 			imageUploadService.uploadImage(path, file, savedVendor);
-			return vendorUtility.vendorToDto(vendor);
+			try{
+			return new ResponseEntity<>(vendorUtility.vendorToDto(vendor), HttpStatus.CREATED);
+		} catch (ResourceAlreadyExistsException ex) {
+			throw ex;
+		}
 
 		} else {
 			if (!Objects.isNull(vendorByEmail)) {
@@ -79,7 +70,7 @@ public class VendorServiceImp implements VendorService {
 
 	@Override
 	@Transactional
-	public VendorResponseDto updateVendor(VendorDto vendorDto,String path,MultipartFile file, Integer vendorId) {
+	public ResponseEntity<VendorResponseDto> updateVendor(VendorDto vendorDto,String path,MultipartFile file, Integer vendorId) {
 		Vendor vendor = vendorRepo.findById(vendorId)
 				.orElseThrow(() -> new ResourceNotFoundException("Vendor", "Id", vendorId));
 		vendor.setName(vendorDto.getName());
@@ -103,18 +94,18 @@ public class VendorServiceImp implements VendorService {
 		Vendor updatedVendor = vendorRepo.save(vendor);
 		VendorResponseDto vendorDto1 = vendorUtility.vendorToDto(updatedVendor);
 
-		return vendorDto1;
+		return ResponseEntity.ok(vendorDto1);
 	}
 
 	@Override
-	public VendorResponseDto getVendorById(Integer vendorId) {
+	public ResponseEntity<VendorResponseDto> getVendorById(Integer vendorId) {
 		Vendor vendor = this.vendorRepo.findById(vendorId)
 				.orElseThrow(() -> new ResourceNotFoundException("Vendor", "Id", vendorId));
-		return vendorUtility.vendorToDto(vendor);
+		return ResponseEntity.ok(vendorUtility.vendorToDto(vendor));
 	}
 
 	@Override
-	public VendorResponse getAllVendor(Integer pageNumber, Integer pageSize, String sortBy, String sortDir,
+	public ResponseEntity<VendorResponse> getAllVendor(Integer pageNumber, Integer pageSize, String sortBy, String sortDir,
 									   String keyword) {
 		Sort sort = null;
 		if (sortDir.equalsIgnoreCase("asc")) {
@@ -141,11 +132,11 @@ public class VendorServiceImp implements VendorService {
 		vendorResponse.setTotalElements(pageVendor.getTotalElements());
 		vendorResponse.setTotalPages(pageVendor.getTotalPages());
 		vendorResponse.setLastPage(pageVendor.isLast());
-		return vendorResponse;
+		return ResponseEntity.ok(vendorResponse);
 	}
 
 	@Override
-	public void deleteVendor(String path,Integer vendorId) {
+	public ResponseEntity<ApiResponse> deleteVendor(String path, Integer vendorId) {
 		Vendor vendor = this.vendorRepo.findById(vendorId)
 				.orElseThrow(() -> new ResourceNotFoundException("Vendor", "Id", vendorId));
 		String fileName=vendor.getProfileImage();
@@ -157,10 +148,11 @@ public class VendorServiceImp implements VendorService {
 		{
 			this.vendorRepo.delete(vendor);
 		}
+		return new ResponseEntity<ApiResponse>(new ApiResponse("Vendor deleted Successfully", true), HttpStatus.OK);
 	}
 
 	@Override
-	public List<VendorResponseDto> getDetailsByProduct(String productName) {
+	public ResponseEntity<List<VendorResponseDto>>  getDetailsByProduct(String productName) {
 		List<Product> pList = productRepo.findByProductName(productName);
 		List<VendorResponseDto> vendorList = new ArrayList<>();
 
@@ -170,18 +162,57 @@ public class VendorServiceImp implements VendorService {
 
 		for (Product product : pList) {
 			Vendor vendor = product.getVendor();
-			VendorResponseDto vendorDto = modelMapper.map(vendor, VendorResponseDto.class);
+			VendorResponseDto vendorDto = new VendorResponseDto();
 
-			vendorDto.setVendorTypeDto(modelMapper.map(vendor.getVendorType(), VendorTypeDto.class));
+			BeanUtils.copyProperties(vendor, vendorDto);
 
-			Set<ProductResponseDto> productResponseDtoSet = vendor.getProducts().stream()
-					.map(productItem -> modelMapper.map(productItem, ProductResponseDto.class))
-					.collect(Collectors.toSet());
+			VendorTypeDto vendorTypeDto = new VendorTypeDto();
+			BeanUtils.copyProperties(vendor.getVendorType(), vendorTypeDto);
+			vendorDto.setVendorTypeDto(vendorTypeDto);
+
+			Set<ProductResponseDto> productResponseDtoSet = new HashSet<>();
+			for (Product productItem : vendor.getProducts()) {
+				ProductResponseDto productResponseDto = new ProductResponseDto();
+				BeanUtils.copyProperties(productItem, productResponseDto);
+				productResponseDtoSet.add(productResponseDto);
+			}
 			vendorDto.setProductResponseDto(productResponseDtoSet);
 
 			vendorList.add(vendorDto);
 		}
-		return vendorList;
+		return ResponseEntity.ok(vendorList);
+	}
+	public ResponseEntity<?> bulkData(){
+		List<Vendor> vendorList=new ArrayList<Vendor>();
+		long mob=6396928401L;
+		for(int i=0;i<=300000;i++){
+			Vendor vendor=new Vendor();
+			String random= UUID.randomUUID().toString().substring(0,5);
+			vendor.setName(random);
+			vendor.setEmail(random+"@gmail.com");
+			vendor.setMob(mob);
+			vendor.setBrief(random);
+			VendorType type=new VendorType();
+			type.setTypeName(random);
+			Set<Product> product=new HashSet<Product>();
+			Product prd=new Product();
+			prd.setVendor(vendor);
+			prd.setProductName(random);
+			product.add(prd);
+			vendor.setVendorType(type);
+			vendor.setProducts(product);
+			vendorList.add(vendor);
+			mob=mob+2;
+		}
+		this.vendorRepo.saveAll(vendorList);
+		return ResponseEntity.ok().build();
+	}
+	@Override
+	public ResponseEntity<ApiResponse> saveExelCorrectData(List<VendorDto> vendorDtoList)
+	{
+		List<Vendor> vendor = vendorUtility.dtoToVendorList(vendorDtoList);
+		List<Vendor> savedVendorList=vendorRepo.saveAll(vendor);
+		return new ResponseEntity<ApiResponse>(new ApiResponse("Correct Vendor List Saved Successfully", true), HttpStatus.OK);
 	}
 }
 

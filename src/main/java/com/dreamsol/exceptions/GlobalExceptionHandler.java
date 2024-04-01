@@ -45,5 +45,4 @@ public class GlobalExceptionHandler
 	public ResponseEntity<String> handleEmptyVendorListException(EmptyVendorListException ex) {
 		return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);
 	}
-    
 }
