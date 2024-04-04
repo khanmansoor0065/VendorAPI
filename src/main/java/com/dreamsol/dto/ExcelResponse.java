@@ -13,7 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 public class ExcelResponse {
 	private List<VendorDto> correctData;
-	private List<InvalidData> invalidData;
+	private List<VendorDto> invalidData;
 	private String errorMessage;
 
 }

@@ -4,20 +4,18 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.util.*;
 
 import com.dreamsol.dto.*;
 import com.dreamsol.entities.Product;
 import com.dreamsol.entities.Vendor;
+import com.dreamsol.exceptions.EmptyVendorListException;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.web.multipart.MultipartFile;
+
 
 public class ExcelHelper {
 
@@ -38,133 +36,88 @@ public class ExcelHelper {
 		return contentType.equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 	}
 
-	public static ExcelResponse convertExcelToList(InputStream is) {
-		ExcelResponse response = new ExcelResponse();
-		List<VendorDto> correctData = new ArrayList<>();
-		List<InvalidData> invalidData = new ArrayList<>();
+	private static final Map<String, Class<?>> entityDtoMap = new HashMap<>();
+
+	static {
+		entityDtoMap.put("vendor", VendorDto.class);
+		entityDtoMap.put("vendorType", VendorTypeDto.class);
+		entityDtoMap.put("product", ProductDto.class);
+	}
+
+	public static List<Object> convertExcelToList(InputStream is, String entityName) {
+		List<Object> dataList = new ArrayList<>();
+
+		Class<?> dtoClass = entityDtoMap.get(entityName);
+		if (dtoClass == null) {
+			throw new EmptyVendorListException("No DTO class found for entity: " + entityName);
+        }
 
 		try {
-			XSSFWorkbook workbook = new XSSFWorkbook(is);
-			XSSFSheet sheet = workbook.getSheet("Sheet1");
+			Workbook workbook = WorkbookFactory.create(is);
+			Sheet sheet = workbook.getSheetAt(0);
 			DataFormatter formatter = new DataFormatter();
 
-			Iterator<Row> iterator = sheet.iterator();
 			int rowNumber = 0;
 
-			while (iterator.hasNext()) {
-				Row row = iterator.next();
+			for (Row row : sheet) {
 				if (rowNumber == 0) {
 					rowNumber++;
 					continue;
 				}
 				int cid = 0;
-				VendorDto vendorDto = new VendorDto();
-				Set<ProductDto> listProductDto = new HashSet<>();
-				boolean validRow = true;
+				Object dtoInstance = dtoClass.getDeclaredConstructor().newInstance();
 
-				InvalidData invalidDataObj = new InvalidData();
-
-				Iterator<Cell> cells = row.iterator();
-				while (cells.hasNext()) {
-					Cell cell = cells.next();
-					switch (cid) {
-						case 0:
-							String name = formatter.formatCellValue(cell);
-							if (name == null || name.trim().isEmpty()) {
-								validRow = false;
-								invalidDataObj.setRowNumber(rowNumber);
-								invalidDataObj.setColumnIndex(cid);
-								invalidDataObj.setErrorMessage("Name cannot be empty");
-								//invalidDataObj.setInvalidName(name);
-							}
-							invalidDataObj.setInvalidName(name);
-							vendorDto.setName(name);
-							break;
-						case 1:
+				for (Cell cell : row) {
+					if (cid < dtoClass.getDeclaredFields().length) {
+						Field field = dtoClass.getDeclaredFields()[cid];
+						field.setAccessible(true);
+						try {
 							if (cell.getCellTypeEnum() == CellType.NUMERIC) {
-								long mob = (long) cell.getNumericCellValue();
-								String mobString = String.valueOf(mob);
-								if (mobString.length() != 10) {
-									validRow = false;
-									invalidDataObj.setRowNumber(rowNumber);
-									invalidDataObj.setColumnIndex(cid);
-									invalidDataObj.setErrorMessage("Mobile number must be 10 digits");
-									//	invalidDataObj.setInvalidMob(mob);
+								if (field.getType() == Long.class || field.getType() == long.class) {
+									field.set(dtoInstance, (long) cell.getNumericCellValue());
+								} else if (field.getType() == String.class) {
+									field.set(dtoInstance, String.valueOf(cell.getNumericCellValue()));
 								}
-								invalidDataObj.setInvalidMob(mob);
-								vendorDto.setMob(mob);
-							} else {
-								validRow = false;
-								invalidDataObj.setRowNumber(rowNumber);
-								invalidDataObj.setColumnIndex(cid);
-								invalidDataObj.setErrorMessage("Invalid cell type for mobile number");
+							} else if (cell.getCellTypeEnum() == CellType.STRING) {
+								if (field.getType() == Long.class || field.getType() == long.class) {
+									field.set(dtoInstance, Long.parseLong(cell.getStringCellValue()));
+								} else if (field.getType() == String.class) {
+									field.set(dtoInstance, cell.getStringCellValue());
+								} else if (field.getType() == VendorTypeDto.class) {
+									VendorTypeDto vendorTypeDto = new VendorTypeDto();
+									vendorTypeDto.setTypeName(cell.getStringCellValue());
+									field.set(dtoInstance, vendorTypeDto);
+								} else if (field.getType() == Set.class && field.getGenericType() instanceof ParameterizedType) {
+									ParameterizedType setType = (ParameterizedType) field.getGenericType();
+									Class<?> setTypeClass = (Class<?>) setType.getActualTypeArguments()[0];
+									if (setTypeClass == ProductDto.class) {
+										String val = cell.getStringCellValue();
+										String[] vals = val.split(",");
+										Set<ProductDto> productDtos = new HashSet<>();
+										for (String str : vals) {
+											ProductDto productDto = new ProductDto();
+											productDto.setProductName(str);
+											productDtos.add(productDto);
+										}
+										field.set(dtoInstance, productDtos);
+									}
+								}
 							}
-							break;
-						case 2:
-							String email = formatter.formatCellValue(cell);
-							if (!isValidEmail(email)) {
-								validRow = false;
-								invalidDataObj.setRowNumber(rowNumber);
-								invalidDataObj.setColumnIndex(cid);
-								invalidDataObj.setErrorMessage("Invalid email format");
-								//invalidDataObj.setInvalidEmail(email);
-							}
-							invalidDataObj.setInvalidEmail(email);
-							vendorDto.setEmail(email);
-							break;
-						case 3:
-							String brief = formatter.formatCellValue(cell);
-							if (brief == null || brief.trim().isEmpty()) {
-								validRow = false;
-								invalidDataObj.setRowNumber(rowNumber);
-								invalidDataObj.setColumnIndex(cid);
-								invalidDataObj.setErrorMessage("Brief cannot be empty");
-								//invalidDataObj.setInvalidBrief(brief);
-							}
-							invalidDataObj.setInvalidBrief(brief);
-							vendorDto.setBrief(brief);
-							break;
-						case 4:
-							invalidDataObj.setVendorTypeDto(new VendorTypeDto(formatter.formatCellValue(cell)));
-							vendorDto.setVendorTypeDto(new VendorTypeDto(formatter.formatCellValue(cell)));
-							break;
-						case 5:
-							String type = formatter.formatCellValue(cell);
-							String[] typeList = type.split(",");
-							for (String typeName : typeList) {
-								ProductDto productdto = new ProductDto();
-								productdto.setProductName(typeName);
-								listProductDto.add(productdto);
-							}
-							invalidDataObj.setProductDto(listProductDto);
-							vendorDto.setProductDto(listProductDto);
-							break;
+						} catch (IllegalAccessException e) {
+							e.printStackTrace();
+						}
 					}
 					cid++;
 				}
-				if (!validRow) {
-					invalidData.add(invalidDataObj);
-				} else {
-					correctData.add(vendorDto);
-				}
+				dataList.add(dtoInstance);
 				rowNumber++;
 			}
-		} catch (IllegalArgumentException ex) {
-			response.setErrorMessage(ex.getMessage());
 		} catch (Exception ex) {
 			ex.printStackTrace();
-			response.setErrorMessage("An error occurred while processing the Excel file.");
 		}
 
-		response.setCorrectData(correctData);
-		response.setInvalidData(invalidData);
-		return response;
+		return dataList;
 	}
-
-	private static boolean isValidEmail(String email) {
-		return email != null && email.contains("@");
-	}
-
 
 	public static ByteArrayInputStream dataToExcel(List<Vendor> list) {
 
@@ -173,21 +126,6 @@ public class ExcelHelper {
 		try {
 
 			Sheet sheet = workbook.createSheet(SHEET_NAME);
-
-//			String[] x = {"Mandatory", "Mandatory", "Mandatory", "Optional", "Mandatory", "Mandatory"};
-//			Row row0 = sheet.createRow(0);
-//
-//			Font boldFont = workbook.createFont();
-//			boldFont.setBold(true);
-//
-//			CellStyle boldStyle = workbook.createCellStyle();
-//			boldStyle.setFont(boldFont);
-//
-//			for (int i = 0; i < x.length; i++) {
-//				Cell cell = row0.createCell(i);
-//				cell.setCellValue(x[i]);
-//				cell.setCellStyle(boldStyle);
-//			}
 
 			Font boldFont = workbook.createFont();
 			boldFont.setBold(true);
@@ -231,4 +169,39 @@ public class ExcelHelper {
 			return null;
 		}
 	}
+	public static ByteArrayInputStream createExcelHeader(String[] headers) {
+
+		Workbook workbook = new SXSSFWorkbook();
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		try {
+			Sheet sheet = workbook.createSheet(SHEET_NAME);
+
+			Font boldFont = workbook.createFont();
+			boldFont.setBold(true);
+
+			CellStyle boldStyle = workbook.createCellStyle();
+			boldStyle.setFont(boldFont);
+
+
+			Row headerRow = sheet.createRow(0);
+			for (int i = 0; i < headers.length; i++) {
+				Cell cell = headerRow.createCell(i);
+				cell.setCellValue(headers[i]);
+				cell.setCellStyle(boldStyle);
+			}
+			Row mandatoryRow=sheet.createRow(1);
+			for(int i=0;i<headers.length;i++)
+			{
+				Cell cell = mandatoryRow.createCell(i);
+				cell.setCellValue("Mandatory");
+			}
+
+			workbook.write(out);
+			return new ByteArrayInputStream(out.toByteArray());
+		} catch (IOException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
 }

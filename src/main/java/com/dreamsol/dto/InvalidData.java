@@ -8,13 +8,11 @@ import java.util.Set;
 @Getter
 @Setter
 public class InvalidData {
-    private int rowNumber;
-    private int columnIndex;
-    private String errorMessage;
-    private String invalidName;
-    private long invalidMob;
-    private String invalidEmail;
-    private String invalidBrief;
+    private String name;
+    private long mobile;
+    private String email;
+    private String brief;
     private VendorTypeDto vendorTypeDto;
     private Set<ProductDto> productDto;
+    private Set<String> messages;
 }

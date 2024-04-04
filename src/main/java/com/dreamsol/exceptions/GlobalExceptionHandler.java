@@ -45,4 +45,9 @@ public class GlobalExceptionHandler
 	public ResponseEntity<String> handleEmptyVendorListException(EmptyVendorListException ex) {
 		return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);
 	}
+	@ExceptionHandler(IllegalArgumentException.class)
+	@ResponseStatus(HttpStatus.CONFLICT)
+	public ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException ex) {
+		return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);
+	}
 }

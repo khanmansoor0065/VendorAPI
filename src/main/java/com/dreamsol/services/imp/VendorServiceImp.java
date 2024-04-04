@@ -30,7 +30,8 @@ public class VendorServiceImp implements VendorService {
 	@Autowired
 	private ProductRepo productRepo;
 
-	VendorUtility vendorUtility=new VendorUtility();
+	@Autowired
+	VendorUtility vendorUtility;
 
 	@Autowired
 	private VendorTypeRepo vendorTypeRepo;

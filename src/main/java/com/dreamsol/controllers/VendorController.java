@@ -8,12 +8,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
+
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.dreamsol.services.VendorService;
-import com.dreamsol.services.imp.ExcelHelper;
+
 import com.dreamsol.services.imp.ExcelService;
 import com.dreamsol.services.imp.ImageUploadService;
 
@@ -46,7 +46,7 @@ public class VendorController {
 	@PostMapping(value = "add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<VendorResponseDto> addVendor(@Valid @RequestPart("vendorDto") VendorDto vendorDto,
 													   @RequestParam("profileImage") MultipartFile file) {
-			  return vendorService.addVendor(vendorDto, path, file);
+		return vendorService.addVendor(vendorDto, path, file);
 	}
 
 	@Operation(
@@ -91,7 +91,7 @@ public class VendorController {
 	)
 	@GetMapping("list/{vendorId}")
 	public ResponseEntity<VendorResponseDto> getSingleVendor(@PathVariable Integer vendorId) {
-		 return this.vendorService.getVendorById(vendorId);
+		return this.vendorService.getVendorById(vendorId);
 	}
 
 	@GetMapping(value = "download/{fileName}")
@@ -105,36 +105,37 @@ public class VendorController {
 
 		response.getOutputStream().write(fileBytes);
 	}
+
 	@Operation(
 			summary = "POST operation to Upload Excel file",
 			description = "It is used to store Excel data in Database"
 	)
 	@PostMapping(value = "excel-list", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	public ResponseEntity<?> uploadUserExcelFile(@RequestParam("file") MultipartFile file) {
-		if (ExcelHelper.checkExcelFormat(file)) {
-			return helperService.save(file);
-		}
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Please upload an Excel file only");
+	public ResponseEntity<?> uploadUserExcelFile(@RequestParam("file") MultipartFile file,
+												 @RequestParam(value = "name") String EntityName) {
+			return helperService.validateExcelData(file, EntityName);
 	}
+
 	@Operation(
 			summary = "GET operation to download data from the database in excel format",
 			description = "It is used to download data from database"
 	)
 	@GetMapping("excel-download")
 	public ResponseEntity<Resource> download(
-			@RequestParam(required = false,defaultValue = "") String filter) throws IOException{
-			  return helperService.getActualData(filter);
+			@RequestParam(required = false, defaultValue = "") String filter) throws IOException {
+		return helperService.getActualData(filter);
 	}
+
 	@GetMapping("product{productName}")
-	public ResponseEntity<List<VendorResponseDto>> getDetailsByProduct(@RequestParam(value = "productName") String productName)
-	{
+	public ResponseEntity<List<VendorResponseDto>> getDetailsByProduct(@RequestParam(value = "productName") String productName) {
 		return vendorService.getDetailsByProduct(productName);
 	}
+
 	@PostMapping("bulkData")
-	public ResponseEntity<?> postBulkApi()
-	{
+	public ResponseEntity<?> postBulkApi() {
 		return this.vendorService.bulkData();
 	}
+
 	@Operation(
 			summary = "POST operation on vendor to save excel correct list of vendors",
 			description = "It is used to save excel correct list of vendors in database"
@@ -142,6 +143,11 @@ public class VendorController {
 	@PostMapping(value = "validate-excel-data")
 	public ResponseEntity<ApiResponse> saveExcel(@RequestBody List<VendorDto> vendorDtoList) {
 		return vendorService.saveExelCorrectData(vendorDtoList);
+	}
+
+	@GetMapping("excel-format-download")
+	public ResponseEntity<Resource> downloadFormat(@RequestParam(value = "name") String EntityName) throws IOException {
+		return helperService.getActualDataFormat(EntityName);
 	}
 }
 

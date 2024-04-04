@@ -14,6 +14,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 
 @RestController
 @RequestMapping("vendor-type")
@@ -66,6 +68,10 @@ public class VendorTypeController {
 			@RequestParam(value = "sortDir", defaultValue = "asc", required = false) String sortDir,
 			@RequestParam(value = "filter", required = false) String keyword) {
 		return this.vendorTypeService.getAllVendorType(pageNumber, pageSize, sortBy, sortDir, keyword);
+	}
+	@PostMapping(value = "validate-excel-data")
+	public ResponseEntity<ApiResponse> saveExcel(@RequestBody List<VendorTypeDto> vendorTypeDtoList) {
+		return vendorTypeService.saveExelCorrectData(vendorTypeDtoList);
 	}
 }
 

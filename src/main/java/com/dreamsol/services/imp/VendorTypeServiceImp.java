@@ -3,6 +3,7 @@ package com.dreamsol.services.imp;
 import com.dreamsol.dto.*;
 
 
+import com.dreamsol.entities.Vendor;
 import com.dreamsol.entities.VendorType;
 
 import com.dreamsol.exceptions.ResourceAlreadyExistsException;
@@ -30,7 +31,8 @@ public class VendorTypeServiceImp implements VendorTypeService {
 	@Autowired
 	private VendorTypeRepo vendorTypeRepo;
 
-	VendorUtility vendorUtility=new VendorUtility();
+	@Autowired
+	VendorUtility vendorUtility;
 
 	VendorType savedVendorType;
 
@@ -103,6 +105,13 @@ public class VendorTypeServiceImp implements VendorTypeService {
 				.orElseThrow(() -> new ResourceNotFoundException("Vendor", "Id", vendorTypeId));
 		this.vendorTypeRepo.deleteById(vendorTypeId);
 		return new ResponseEntity<ApiResponse>(new ApiResponse("Vendor Type deleted Successfully", true), HttpStatus.OK);
+	}
+	@Override
+	public ResponseEntity<ApiResponse> saveExelCorrectData(List<VendorTypeDto> vendorTypeDtoList)
+	{
+		List<VendorType> vendorType = vendorUtility.dtoToVendorTypeList(vendorTypeDtoList);
+		List<VendorType> savedVendorList=vendorTypeRepo.saveAll(vendorType);
+		return new ResponseEntity<ApiResponse>(new ApiResponse("Correct Vendor Type List Saved Successfully", true), HttpStatus.OK);
 	}
 }
 
