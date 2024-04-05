@@ -21,7 +21,7 @@ public class Vendor {
 	private long mob;
 	private String email;
 	private String brief;
-	private String profileImage;
+	private String file;
 
 	@OneToOne(cascade = CascadeType.ALL)
 	private VendorType vendorType;

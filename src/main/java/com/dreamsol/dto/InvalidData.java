@@ -9,7 +9,7 @@ import java.util.Set;
 @Setter
 public class InvalidData {
     private String name;
-    private long mobile;
+    private long mob;
     private String email;
     private String brief;
     private VendorTypeDto vendorTypeDto;

@@ -45,7 +45,7 @@ public class VendorController {
 	)
 	@PostMapping(value = "add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<VendorResponseDto> addVendor(@Valid @RequestPart("vendorDto") VendorDto vendorDto,
-													   @RequestParam("profileImage") MultipartFile file) {
+													   @RequestParam("file") MultipartFile file) {
 		return vendorService.addVendor(vendorDto, path, file);
 	}
 

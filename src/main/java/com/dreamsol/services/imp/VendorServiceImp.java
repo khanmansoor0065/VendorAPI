@@ -81,7 +81,7 @@ public class VendorServiceImp implements VendorService {
 		String fileName=file.getOriginalFilename();
 		if(fileName!=null)
 		{
-			String oldFileName=vendor.getProfileImage();
+			String oldFileName=vendor.getFile();
 			if(imageUploadService.deleteImage(path, oldFileName))
 			{
 				imageUploadService.uploadImage(path, file, vendor);
@@ -140,7 +140,7 @@ public class VendorServiceImp implements VendorService {
 	public ResponseEntity<ApiResponse> deleteVendor(String path, Integer vendorId) {
 		Vendor vendor = this.vendorRepo.findById(vendorId)
 				.orElseThrow(() -> new ResourceNotFoundException("Vendor", "Id", vendorId));
-		String fileName=vendor.getProfileImage();
+		String fileName=vendor.getFile();
 		if(fileName==null)
 		{
 			this.vendorRepo.delete(vendor);
@@ -209,11 +209,25 @@ public class VendorServiceImp implements VendorService {
 		return ResponseEntity.ok().build();
 	}
 	@Override
-	public ResponseEntity<ApiResponse> saveExelCorrectData(List<VendorDto> vendorDtoList)
-	{
-		List<Vendor> vendor = vendorUtility.dtoToVendorList(vendorDtoList);
-		List<Vendor> savedVendorList=vendorRepo.saveAll(vendor);
-		return new ResponseEntity<ApiResponse>(new ApiResponse("Correct Vendor List Saved Successfully", true), HttpStatus.OK);
+	public ResponseEntity<ApiResponse> saveExelCorrectData(List<VendorDto> vendorDtoList) {
+		List<Vendor> vendorList = vendorUtility.dtoToVendorList(vendorDtoList);
+		Set<Vendor> savedVendorList = new HashSet<>();
+
+		for (Vendor vendor : vendorList) {
+			Vendor vendorByMobile = vendorRepo.findByMob(vendor.getMob());
+
+			if (vendorByMobile != null) {
+				vendorByMobile.setName(vendor.getName());
+				vendorByMobile.setBrief(vendor.getBrief());
+				vendorByMobile.setEmail(vendor.getEmail());
+				savedVendorList.add(vendorByMobile);
+			} else {
+				savedVendorList.add(vendor);
+			}
+		}
+		vendorRepo.saveAll(savedVendorList);
+		return new ResponseEntity<>(new ApiResponse("Vendors List Saved successfully", true), HttpStatus.OK);
 	}
+
 }
 

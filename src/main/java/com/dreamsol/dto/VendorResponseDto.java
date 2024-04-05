@@ -16,7 +16,7 @@ public class VendorResponseDto {
 	private long mob;
 	private String email;
 	private String brief;
-	private String profileImage;
+	private String file;
 	private VendorTypeDto vendorTypeDto;
 	private Set<ProductResponseDto> productResponseDto;
 
