@@ -15,15 +15,19 @@ import lombok.Setter;
 @Entity
 public class Vendor {
 	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int id;
+    @Column(length = 40 , nullable = false)
 	private String name;
+	@Column(nullable = false,unique = true)
 	private long mob;
+	@Column(length = 50 ,nullable = false)
 	private String email;
+	@Column(length = 200 )
 	private String brief;
 	private String file;
 
-	@OneToOne(cascade = CascadeType.ALL)
+	@OneToOne(cascade = CascadeType.ALL,fetch = FetchType.EAGER)
 	private VendorType vendorType;
 
 	@OneToMany(mappedBy = "vendor", cascade = CascadeType.ALL)

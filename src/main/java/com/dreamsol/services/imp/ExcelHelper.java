@@ -41,7 +41,6 @@ public class ExcelHelper {
 	static {
 		entityDtoMap.put("vendor", VendorDto.class);
 		entityDtoMap.put("vendorType", VendorTypeDto.class);
-		entityDtoMap.put("product", ProductDto.class);
 	}
 
 	public static List<Object> convertExcelToList(InputStream is, String entityName) {

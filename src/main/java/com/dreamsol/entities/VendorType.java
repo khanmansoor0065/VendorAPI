@@ -13,9 +13,10 @@ import lombok.Setter;
 @Entity
 public class VendorType {
 	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int id;
+	@Column(length = 30,nullable = false)
 	private String typeName;
-	@OneToOne(mappedBy = "vendorType")
+	@OneToOne(mappedBy = "vendorType",fetch = FetchType.EAGER)
 	private Vendor vendor;
 }

@@ -13,8 +13,9 @@ import lombok.Setter;
 @Entity
 public class Product {
 	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int id;
+	@Column(length = 30,nullable = false)
 	private String productName;
 	@ManyToOne
 	private Vendor vendor;

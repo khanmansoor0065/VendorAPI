@@ -3,7 +3,6 @@ package com.dreamsol.services.imp;
 import com.dreamsol.dto.*;
 
 
-import com.dreamsol.entities.Vendor;
 import com.dreamsol.entities.VendorType;
 
 import com.dreamsol.exceptions.ResourceAlreadyExistsException;
@@ -44,7 +43,7 @@ public class VendorTypeServiceImp implements VendorTypeService {
 			VendorType vendorType = vendorUtility.dtoToVendorType(vendorTypeDto);
 			savedVendorType = vendorTypeRepo.save(vendorType);
 			try {
-				return new ResponseEntity<>(vendorUtility.VendorTypeToDto(vendorType), HttpStatus.CREATED);
+				return new ResponseEntity<>(vendorUtility.vendorTypeToDto(vendorType), HttpStatus.CREATED);
 			} catch (ResourceAlreadyExistsException ex) {
 				throw ex;
 			}
@@ -85,7 +84,7 @@ public class VendorTypeServiceImp implements VendorTypeService {
 
 		List<VendorType> vendorTypes = pageVendorType.getContent();
 		List<VendorTypeDto> vendorTypeDtos = vendorTypes.stream()
-				.map(vendorUtility::VendorTypeToDto)
+				.map(vendorUtility::vendorTypeToDto)
 				.collect(Collectors.toList());
 
 		VendorTypeResponse vendorTypeResponse = new VendorTypeResponse();
@@ -109,9 +108,28 @@ public class VendorTypeServiceImp implements VendorTypeService {
 	@Override
 	public ResponseEntity<ApiResponse> saveExelCorrectData(List<VendorTypeDto> vendorTypeDtoList)
 	{
-		List<VendorType> vendorType = vendorUtility.dtoToVendorTypeList(vendorTypeDtoList);
-		List<VendorType> savedVendorList=vendorTypeRepo.saveAll(vendorType);
+		List<VendorType> vendorTypeList = vendorUtility.dtoToVendorTypeList(vendorTypeDtoList);
+		Set<VendorType> savedVendorTypeList = new HashSet<>();
+		for(VendorType vendorType:vendorTypeList)
+		{
+			VendorType vendorTypeName = vendorTypeRepo.findByTypeName(vendorType.getTypeName());
+			if (vendorTypeName != null)
+			{
+				vendorTypeName.setTypeName(vendorType.getTypeName());
+				savedVendorTypeList.add(vendorTypeName);
+			}else{
+				savedVendorTypeList.add(vendorType);
+			}
+		}
+		vendorTypeRepo.saveAll(savedVendorTypeList);
 		return new ResponseEntity<ApiResponse>(new ApiResponse("Correct Vendor Type List Saved Successfully", true), HttpStatus.OK);
+	}
+
+	@Override
+	public ResponseEntity<VendorTypeDto> getVendorTypeById(Integer vendorTypeId) {
+		VendorType vendorType = this.vendorTypeRepo.findById(vendorTypeId)
+				.orElseThrow(() -> new ResourceNotFoundException("Vendor type", "Id", vendorTypeId));
+		return ResponseEntity.ok(vendorUtility.vendorTypeToDto(vendorType));
 	}
 }
 

@@ -7,6 +7,7 @@ import com.dreamsol.repositories.VendorRepo;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -27,12 +28,11 @@ import static com.dreamsol.services.imp.ExcelHelper.convertExcelToList;
 
 
 @Service
+@AllArgsConstructor(onConstructor_ = {@Autowired})
 public class ExcelService {
 
-	@Autowired
 	private VendorRepo vendorRepo;
 
-	@Autowired
 	private VendorUtility vendorUtility;
 
 	public static Validator validator;
@@ -72,8 +72,6 @@ public class ExcelService {
 				return VendorDto.class;
 			case "vendortype":
 				return VendorTypeDto.class;
-			case "product":
-				return ProductDto.class;
 			default:
 				throw new IllegalArgumentException("Enter a valid entity name "+entityName);
 		}
@@ -97,8 +95,6 @@ public class ExcelService {
 				return entity;
 			case "vendortype":
 				return entity;
-			case "product":
-				return entity;
 			default:
 				throw new IllegalArgumentException("Enter a valid entity name "+entityName);
 		}
@@ -110,8 +106,6 @@ public class ExcelService {
 				return vendorUtility.toInvalid((VendorDto) entity);
 			case "vendortype":
 				return vendorUtility.toInvalidVendorType((VendorTypeDto) entity);
-			case "product":
-				return entity;
 			default:
 				throw new IllegalArgumentException("Entity is not valid  "+entityName);
 		}

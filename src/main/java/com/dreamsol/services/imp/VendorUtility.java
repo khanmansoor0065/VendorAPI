@@ -27,7 +27,7 @@ public class VendorUtility {
     public VendorResponseDto vendorToDto(Vendor vendor) {
         VendorResponseDto vendorDto = new VendorResponseDto();
         BeanUtils.copyProperties(vendor, vendorDto);
-        vendorDto.setVendorTypeDto(VendorTypeToDto(vendor.getVendorType()));
+        vendorDto.setVendorTypeDto(vendorTypeToDto(vendor.getVendorType()));
         vendorDto.setProductResponseDto(productsToDto(vendor.getProducts()));
         return vendorDto;
     }
@@ -38,7 +38,7 @@ public class VendorUtility {
         return vendorType;
     }
 
-    public VendorTypeDto VendorTypeToDto(VendorType vendorType) {
+    public VendorTypeDto vendorTypeToDto(VendorType vendorType) {
         VendorTypeDto vendorTypeDto = new VendorTypeDto();
         BeanUtils.copyProperties( vendorType,vendorTypeDto);
         return vendorTypeDto;

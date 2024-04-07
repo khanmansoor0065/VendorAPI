@@ -4,7 +4,6 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -24,7 +23,7 @@ public class ImageUploadService
 	public String uploadImage(String path, MultipartFile file, Vendor savedVendor) {
 		String fileName = file.getOriginalFilename();
 		String fileNameExtension = fileName.substring(fileName.lastIndexOf('.'));
-		String[] arrayed = fileName.split("\\."); // Corrected
+		String[] arrayed = fileName.split("\\.");
 		fileName = arrayed[0];
 		//String randomID = UUID.randomUUID().toString();
 		String newFileName = fileName + fileNameExtension;
@@ -43,7 +42,6 @@ public class ImageUploadService
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		// Return the new file name
 		return newFileName;
 	}
 

@@ -20,4 +20,6 @@ public interface VendorTypeService
    ResponseEntity<VendorTypeDto> addVendorType(VendorTypeDto vendorTypeDto);
 
     ResponseEntity<ApiResponse> saveExelCorrectData(List<VendorTypeDto> vendorTypeDtoList);
+
+    ResponseEntity<VendorTypeDto> getVendorTypeById(Integer vendorTypeId);
 }

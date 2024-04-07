@@ -17,11 +17,4 @@ public interface VendorTypeRepo extends JpaRepository<VendorType, Integer>
 
     VendorType findByTypeName(String typeName);
 
-//Page<VendorType> findByTypeName(String typeName,Pageable p);
-
-  //  List<VendorType> findByTypeName(String typeName, Pageable pageable);
-
-   // List<VendorType> findTypeName(String s, Pageable p);
-
-  //  Page<VendorType> findByTypeNameLike(String s, Pageable p);
 }
