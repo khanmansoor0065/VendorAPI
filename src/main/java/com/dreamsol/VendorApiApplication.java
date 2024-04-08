@@ -18,7 +18,7 @@ import io.swagger.v3.oas.annotations.servers.Server;
 				),
 		servers = @Server(
 				url = "http://localhost:8080",
-				description = "Vendor OPEN API url"
+				description = "Vendor OPEN API"
 				)
 		)
 public class VendorApiApplication {
