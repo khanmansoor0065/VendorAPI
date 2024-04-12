@@ -1,6 +1,5 @@
 package com.dreamsol.dto;
 
-import com.dreamsol.entities.Vendor;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;

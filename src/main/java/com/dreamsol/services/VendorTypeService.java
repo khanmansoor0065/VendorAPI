@@ -1,9 +1,9 @@
 package com.dreamsol.services;
 
-import com.dreamsol.dto.*;
-import jakarta.transaction.Transactional;
+import com.dreamsol.dto.ApiResponse;
+import com.dreamsol.dto.VendorTypeDto;
+import com.dreamsol.dto.VendorTypeResponse;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
