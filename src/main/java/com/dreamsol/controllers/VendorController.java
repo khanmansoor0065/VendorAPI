@@ -16,6 +16,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -40,6 +41,7 @@ public class VendorController {
 
 
 	@PostMapping(value = "add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@PreAuthorize("hasAuthority('admin')")
 	public ResponseEntity<VendorResponseDto> addVendor(@Valid @RequestPart("vendorDto") VendorDto vendorDto,
 													   @RequestParam("file") MultipartFile file) {
 		return vendorService.addVendor(vendorDto, path, file);

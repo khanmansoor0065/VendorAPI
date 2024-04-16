@@ -5,6 +5,8 @@ import com.dreamsol.entities.Product;
 import com.dreamsol.entities.Vendor;
 import com.dreamsol.entities.VendorType;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -15,9 +17,13 @@ import java.util.Set;
 @Component
 public class VendorUtility {
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     public Vendor dtoToVendor(VendorDto vendorDto) {
         Vendor vendor = new Vendor();
         BeanUtils.copyProperties(vendorDto,vendor);
+        vendor.setPassword(passwordEncoder.encode(vendorDto.getPassword()));
         vendor.setVendorType(dtoToVendorType(vendorDto.getVendorTypeDto()));
         vendor.setProducts(dtoToProduct(vendorDto.getProductDto(), vendor));
         return vendor;
@@ -36,6 +42,21 @@ public class VendorUtility {
         BeanUtils.copyProperties( vendorTypeDto,vendorType);
         return vendorType;
     }
+//    public List<Role> dtoToRole(List<RoleDto> roleDtoList, Vendor vendor) {
+//        List<Role> roles = roleDtoList.stream()
+//                .map(roleDto -> {
+//                    Role role = new Role();
+//                    BeanUtils.copyProperties(roleDto, role);
+//                    role.getVendors().add(vendor); // Associate the role with the vendor
+//                    return role;
+//                })
+//                .collect(Collectors.toList());
+//
+//        // Set the roles for the vendor
+//        vendor.setRoles(roles);
+//
+//        return roles; // Return the list of roles if needed
+//    }
 
     public VendorTypeDto vendorTypeToDto(VendorType vendorType) {
         VendorTypeDto vendorTypeDto = new VendorTypeDto();
@@ -99,7 +120,6 @@ public class VendorUtility {
         invalidData.setMessages(ExcelService.validateEntityMsg(vendor,vendor.getClass()));
         return invalidData;
     }
-
 
     public InvalidVendorTypeData toInvalidVendorType(VendorTypeDto vendorTypeDto) {
         InvalidVendorTypeData invalid = new InvalidVendorTypeData();

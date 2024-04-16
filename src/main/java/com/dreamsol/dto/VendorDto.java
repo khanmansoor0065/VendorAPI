@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -24,6 +25,8 @@ public class VendorDto {
 	@NotEmpty
 	@Size(max = 200, message = "Description has maximum 200 characters!!")
 	private String brief;
+	private String password;
+	//private List<RoleDto> roles;
 	private VendorTypeDto vendorTypeDto;
 	private Set<ProductDto> productDto;
 

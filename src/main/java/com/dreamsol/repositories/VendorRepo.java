@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 
 public interface VendorRepo extends JpaRepository<Vendor,Integer>
@@ -22,5 +23,7 @@ public interface VendorRepo extends JpaRepository<Vendor,Integer>
 
 	@Query("SELECT DISTINCT v FROM Vendor v JOIN FETCH v.products p JOIN FETCH v.vendorType vt")
 	List<Vendor> findAllVendorsWithProductsAndVendorType();
+
+	//public Optional<Vendor> findByEmail(String email);
 
 }

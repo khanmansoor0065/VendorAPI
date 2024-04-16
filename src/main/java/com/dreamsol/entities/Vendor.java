@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -26,10 +27,21 @@ public class Vendor {
 	@Column(length = 200 )
 	private String brief;
 	private String file;
+	private String password;
 
 	@OneToOne(cascade = CascadeType.ALL,fetch = FetchType.EAGER)
 	private VendorType vendorType;
 
 	@OneToMany(mappedBy = "vendor", cascade = CascadeType.ALL)
 	private Set<Product> products;
+
+	@ManyToMany(cascade = CascadeType.ALL,fetch = FetchType.EAGER)
+	@JoinTable(name="vendor_role",
+	joinColumns =@JoinColumn(name="vendor",referencedColumnName = "id"),
+	inverseJoinColumns = @JoinColumn(name = "role",referencedColumnName = "id"))
+	private List<Role> roles;
+
+	@OneToOne(mappedBy = "vendor")
+	private RefreshToken refreshToken;
+
 }

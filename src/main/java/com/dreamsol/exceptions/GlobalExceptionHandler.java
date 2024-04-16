@@ -55,4 +55,8 @@ public class GlobalExceptionHandler
 	public String badCredentialsExceptionHandler(BadCredentialsException e) {
 		return e.getMessage();
 	}
+	@ExceptionHandler(VendorNotFoundException.class)
+	public ResponseEntity<String> handleVendorNotFoundException(VendorNotFoundException ex) {
+		return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+	}
 }
