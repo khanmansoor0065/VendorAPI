@@ -1,11 +1,12 @@
-package com.dreamsol.config;
+package com.dreamsol.controllers;
 
+import com.dreamsol.config.CustomUserDetails;
+import com.dreamsol.config.VendorEndpointsHelper;
+import com.dreamsol.dto.ApiResponse;
 import com.dreamsol.entities.*;
-import com.dreamsol.repositories.RefreshTokenRepo;
+import com.dreamsol.repositories.EndPointsMappingRepo;
 import com.dreamsol.security.JwtHelper;
 import com.dreamsol.services.imp.RefreshTokenServiceImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -27,16 +30,16 @@ public class AuthController
     private AuthenticationManager manager;
 
     @Autowired
-    private CustomUserDetails customUserDetails;
-
-
-    @Autowired
     private JwtHelper helper;
 
     @Autowired
     private RefreshTokenServiceImpl refreshTokenService;
 
-    private Logger logger = LoggerFactory.getLogger(AuthController.class);
+    @Autowired
+    private VendorEndpointsHelper endpointsHelper;
+
+    @Autowired
+    private EndPointsMappingRepo endPointsMappingRepo;
 
     @PostMapping("/login")
     public ResponseEntity<JwtResponse> login(@RequestBody JwtRequest request) {
@@ -67,6 +70,23 @@ public class AuthController
                 .jwtToken(token)
                 .username(vendor.getEmail())
                 .build();
+    }
+
+
+    @PutMapping("/update-endpoints")
+    public ResponseEntity<?> updateEndpoints()
+    {
+        for (Map.Entry<String, String> entry : endpointsHelper.getVendorEndpoints().entrySet()) {
+            String endpointKey = entry.getKey();
+            String endpointLink = entry.getValue();
+
+            EndpointMappings endpointMapping = new EndpointMappings();
+            endpointMapping.setEndPointKey(endpointKey);
+            endpointMapping.setEndPointLink(endpointLink);
+
+            endPointsMappingRepo.save(endpointMapping);
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse(" Endpoints updated successfully",true));
     }
 
 

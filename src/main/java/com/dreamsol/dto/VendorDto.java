@@ -26,7 +26,13 @@ public class VendorDto {
 	@Size(max = 200, message = "Description has maximum 200 characters!!")
 	private String brief;
 	private String password;
-	//private List<RoleDto> roles;
+
+	@Size(min = 1, message = "Vendor role must be defined")
+	private List<RoleDto> roles;
+
+	@Size(min = 1, message = "Vendor permissions must be defined")
+	private List<PermissionDto> permissions;
+
 	private VendorTypeDto vendorTypeDto;
 	private Set<ProductDto> productDto;
 

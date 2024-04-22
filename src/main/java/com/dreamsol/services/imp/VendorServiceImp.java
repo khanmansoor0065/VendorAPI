@@ -2,6 +2,7 @@ package com.dreamsol.services.imp;
 
 import com.dreamsol.dto.*;
 import com.dreamsol.entities.Product;
+import com.dreamsol.entities.Role;
 import com.dreamsol.entities.Vendor;
 import com.dreamsol.entities.VendorType;
 import com.dreamsol.exceptions.EmptyVendorListException;
@@ -35,7 +36,7 @@ public class VendorServiceImp implements VendorService {
 	private ProductRepo productRepo;
 
 	@Autowired
-	VendorUtility vendorUtility;
+	private VendorUtility vendorUtility;
 
 	@Autowired
 	private VendorTypeRepo vendorTypeRepo;

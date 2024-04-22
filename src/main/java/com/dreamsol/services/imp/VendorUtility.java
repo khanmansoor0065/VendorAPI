@@ -2,17 +2,18 @@ package com.dreamsol.services.imp;
 
 import com.dreamsol.dto.*;
 import com.dreamsol.entities.Product;
+import com.dreamsol.entities.Role;
 import com.dreamsol.entities.Vendor;
 import com.dreamsol.entities.VendorType;
+import com.dreamsol.exceptions.ResourceNotFoundException;
+import com.dreamsol.repositories.RoleRepo;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 public class VendorUtility {
@@ -20,13 +21,28 @@ public class VendorUtility {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private RoleRepo roleRepo;
+
     public Vendor dtoToVendor(VendorDto vendorDto) {
         Vendor vendor = new Vendor();
-        BeanUtils.copyProperties(vendorDto,vendor);
+        BeanUtils.copyProperties(vendorDto, vendor);
         vendor.setPassword(passwordEncoder.encode(vendorDto.getPassword()));
         vendor.setVendorType(dtoToVendorType(vendorDto.getVendorTypeDto()));
         vendor.setProducts(dtoToProduct(vendorDto.getProductDto(), vendor));
+        
+        List<Role> roleList = vendorDto.getRoles().stream()
+                .map(this::roleDtoToRole)
+                .collect(Collectors.toList());
+        vendor.setRoles(roleList);
         return vendor;
+    }
+
+    private Role roleDtoToRole(RoleDto roleDto) {
+        Role role = roleRepo.findByRole(roleDto.getRole());
+        if(!Objects.isNull(role))
+            return role;
+        throw new ResourceNotFoundException("Vendor Role", "roleName:" + roleDto.getRole(), 0);
     }
 
     public VendorResponseDto vendorToDto(Vendor vendor) {
@@ -34,7 +50,18 @@ public class VendorUtility {
         BeanUtils.copyProperties(vendor, vendorDto);
         vendorDto.setVendorTypeDto(vendorTypeToDto(vendor.getVendorType()));
         vendorDto.setProductResponseDto(productsToDto(vendor.getProducts()));
+        List<RoleDto> roleDtos = vendor.getRoles().stream()
+                .map(this::roleToRoleDto)
+                .collect(Collectors.toList());
+
+        vendorDto.setRoles(roleDtos);
         return vendorDto;
+    }
+
+    private RoleDto roleToRoleDto(Role role) {
+        RoleDto roleDto = new RoleDto();
+        roleDto.setRole(role.getRole());
+        return roleDto;
     }
 
     public VendorType dtoToVendorType(VendorTypeDto vendorTypeDto) {
@@ -42,21 +69,6 @@ public class VendorUtility {
         BeanUtils.copyProperties( vendorTypeDto,vendorType);
         return vendorType;
     }
-//    public List<Role> dtoToRole(List<RoleDto> roleDtoList, Vendor vendor) {
-//        List<Role> roles = roleDtoList.stream()
-//                .map(roleDto -> {
-//                    Role role = new Role();
-//                    BeanUtils.copyProperties(roleDto, role);
-//                    role.getVendors().add(vendor); // Associate the role with the vendor
-//                    return role;
-//                })
-//                .collect(Collectors.toList());
-//
-//        // Set the roles for the vendor
-//        vendor.setRoles(roles);
-//
-//        return roles; // Return the list of roles if needed
-//    }
 
     public VendorTypeDto vendorTypeToDto(VendorType vendorType) {
         VendorTypeDto vendorTypeDto = new VendorTypeDto();

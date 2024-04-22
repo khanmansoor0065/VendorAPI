@@ -37,9 +37,15 @@ public class Vendor {
 
 	@ManyToMany(cascade = CascadeType.ALL,fetch = FetchType.EAGER)
 	@JoinTable(name="vendor_role",
-	joinColumns =@JoinColumn(name="vendor",referencedColumnName = "id"),
-	inverseJoinColumns = @JoinColumn(name = "role",referencedColumnName = "id"))
+	        joinColumns =@JoinColumn(name="vendor",referencedColumnName = "id"),
+	        inverseJoinColumns = @JoinColumn(name = "role",referencedColumnName = "id"))
 	private List<Role> roles;
+
+	@ManyToMany(cascade = CascadeType.ALL,fetch = FetchType.EAGER)
+	@JoinTable(name="vendor_permission",
+			joinColumns =@JoinColumn(name="vendor",referencedColumnName = "id"),
+			inverseJoinColumns = @JoinColumn(name = "permission",referencedColumnName = "id"))
+	private List<Permission> permissions;
 
 	@OneToOne(mappedBy = "vendor")
 	private RefreshToken refreshToken;

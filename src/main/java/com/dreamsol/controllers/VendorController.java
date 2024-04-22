@@ -41,7 +41,7 @@ public class VendorController {
 
 
 	@PostMapping(value = "add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	@PreAuthorize("hasAuthority('admin')")
+	//@PreAuthorize("hasAuthority('admin')")
 	public ResponseEntity<VendorResponseDto> addVendor(@Valid @RequestPart("vendorDto") VendorDto vendorDto,
 													   @RequestParam("file") MultipartFile file) {
 		return vendorService.addVendor(vendorDto, path, file);

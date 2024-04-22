@@ -18,7 +18,7 @@ public class VendorResponseDto {
 	private String email;
 	private String brief;
 	private String file;
-	//private List<RoleDto> roles;
+	private List<RoleDto> roles;
 	private VendorTypeDto vendorTypeDto;
 	private Set<ProductResponseDto> productResponseDto;
 
