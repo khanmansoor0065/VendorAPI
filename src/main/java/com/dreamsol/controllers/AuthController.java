@@ -1,6 +1,7 @@
 package com.dreamsol.controllers;
 
 import com.dreamsol.config.CustomUserDetails;
+import com.dreamsol.config.SecurityConfig;
 import com.dreamsol.config.VendorEndpointsHelper;
 import com.dreamsol.dto.ApiResponse;
 import com.dreamsol.entities.*;
@@ -13,8 +14,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -41,8 +46,11 @@ public class AuthController
     @Autowired
     private EndPointsMappingRepo endPointsMappingRepo;
 
+    @Autowired
+    private SecurityConfig securityConfig;
+
     @PostMapping("/login")
-    public ResponseEntity<JwtResponse> login(@RequestBody JwtRequest request) {
+    public ResponseEntity<JwtResponse> login(@RequestBody JwtRequest request) throws Exception {
 
         this.doAuthenticate(request.getUsername(), request.getPassword());
 
@@ -56,6 +64,11 @@ public class AuthController
                 .jwtToken(token)
                 .refreshToken(refreshToken.getRefreshToken())
                 .username(userDetails.getUsername()).build();
+
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        securityConfig.updateSecurity();
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 

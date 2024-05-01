@@ -1,5 +1,7 @@
 package com.dreamsol.security;
 
+import com.dreamsol.entities.Permission;
+import com.dreamsol.entities.Role;
 import com.dreamsol.entities.Vendor;
 import com.dreamsol.repositories.VendorRepo;
 import io.jsonwebtoken.Claims;
@@ -14,6 +16,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtHelper {
@@ -21,8 +24,8 @@ public class JwtHelper {
     @Autowired
     private VendorRepo vendorRepo;
 
-    @Value("{jwtToken.validity}")
-    public int tokenTime;
+    @Value("${jwtToken.validity}")
+    public String tokenTime;
 
     public static final long JWT_TOKEN_VALIDITY = 1000;
 
@@ -58,8 +61,8 @@ public class JwtHelper {
         payload.put("Email",vendor.getEmail());
         payload.put("Mobile",vendor.getMob());
         payload.put("Vendor Type",vendor.getVendorType().getTypeName());
-        payload.put("Role",vendor.getRoles());
-        payload.put("Permission",vendor.getPermissions());
+        payload.put("Role",vendor.getRoles().stream().map(Role::getRole).collect(Collectors.toList()));
+        payload.put("Permission",vendor.getPermissions().stream().map(Permission::getPermission).collect(Collectors.toList()));
         return doGenerateToken(payload, userDetails.getUsername());
     }
 
@@ -67,7 +70,7 @@ public class JwtHelper {
     private String doGenerateToken(Map<String, Object> claims, String subject) {
 
         return Jwts.builder().setClaims(claims).setSubject(subject).setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + JWT_TOKEN_VALIDITY * tokenTime))
+                .setExpiration(new Date(System.currentTimeMillis() + JWT_TOKEN_VALIDITY * Integer.parseInt(tokenTime)))
                 .signWith(SignatureAlgorithm.HS512, secret).compact();
     }
 

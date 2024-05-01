@@ -1,54 +1,32 @@
 package com.dreamsol.config;
 
-import com.dreamsol.entities.EndpointMappings;
-import com.dreamsol.repositories.EndPointsMappingRepo;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
-
 import java.util.HashMap;
 import java.util.Map;
 
 @Component
 public class VendorEndpointsHelper {
-
-    @Autowired
-    private EndPointsMappingRepo endPointsMappingRepo;
-
     private static final Map<String, String> vendorEndpoints = new HashMap<>();
-    private static final String[] endpointKeys = {
-            "ADD_VENDOR",
-            "UPDATE_VENDOR",
-            "DELETE_VENDOR",
-            "GET_ALL_VENDORS",
-            "GET_SINGLE_VENDOR_BY_ID",
-            "DOWNLOAD_FILE",
-            "VALIDATE_EXCEL_LIST",
-            "EXCEL_DOWNLOAD",
-            "GET_DETAILS_BY_PRODUCT",
-            "POST_BULK_API",
-            "SAVE_EXCEL_DATA",
-            "EXCEL_FORMAT_DOWNLOAD"
-    };
-    private static final String[] endpointLinks = {
-            "/vendor/add",
-            "/vendor/update/",
-            "/vendor/delete/",
-            "/vendor/list",
-            "/vendor/get-ById/",
-            "/vendor/download/",
-            "/vendor/validate-excel-list",
-            "/vendor/excel-download",
-            "/vendor/product/",
-            "/vendor/bulkData",
-            "/vendor/save-excel-data",
-            "/vendor/excel-format-download"
-    };
-
     static {
-        for (int i = 0; i < endpointKeys.length; i++) {
-            vendorEndpoints.put(endpointKeys[i], endpointLinks[i]);
-        }
+        // Vendor API
+        vendorEndpoints.put("ACCESS_VENDOR_ADD", "/vendor/add");
+        vendorEndpoints.put("ACCESS_VENDOR_UPDATE", "/vendor/update/*");
+        vendorEndpoints.put("ACCESS_VENDOR_DELETE", "/vendor/delete/*");
+        vendorEndpoints.put("ACCESS_VENDOR_GET_ALL", "/vendor/list");
+        vendorEndpoints.put("ACCESS_VENDOR_GET_SINGLE_BY_ID", "/vendor/get-ById/*");
+        vendorEndpoints.put("ACCESS_VENDOR_DOWNLOAD_FILE", "/vendor/download/*");
+        vendorEndpoints.put("ACCESS_VENDOR_VALIDATE_EXCEL_LIST", "/vendor/validate-excel-list");
+        vendorEndpoints.put("ACCESS_VENDOR_EXCEL_DOWNLOAD", "/vendor/excel-download");
+        vendorEndpoints.put("ACCESS_VENDOR_POST_BULK_API", "/vendor/bulkData");
+        vendorEndpoints.put("ACCESS_VENDOR_SAVE_EXCEL_DATA", "/vendor/save-excel-data");
+        vendorEndpoints.put("ACCESS_VENDOR_EXCEL_FORMAT_DOWNLOAD", "/vendor/excel-format-download");
+        // Vendor Type API
+        vendorEndpoints.put("ACCESS_VENDOR_TYPE_ADD", "/vendor-type/add");
+        vendorEndpoints.put("ACCESS_VENDOR_TYPE_UPDATE", "/vendor-type/update/*");
+        vendorEndpoints.put("ACCESS_VENDOR_TYPE_DELETE", "/vendor-type/delete/*");
+        vendorEndpoints.put("ACCESS_VENDOR_TYPE_GET_ALL", "/vendor-type/list");
+        vendorEndpoints.put("ACCESS_VENDOR_TYPE_SAVE_EXCEL_DATA", "/vendor-type/save-excel-data");
+        vendorEndpoints.put("ACCESS_VENDOR_TYPE_GET_SINGLE_BY_ID", "/vendor-type/get-ById/*");
     }
 
     public Map<String, String> getVendorEndpoints() {

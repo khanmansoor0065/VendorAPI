@@ -19,6 +19,7 @@ public class VendorResponseDto {
 	private String brief;
 	private String file;
 	private List<RoleDto> roles;
+	private List<PermissionDto> permission;
 	private VendorTypeDto vendorTypeDto;
 	private Set<ProductResponseDto> productResponseDto;
 

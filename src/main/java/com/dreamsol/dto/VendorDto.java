@@ -34,6 +34,7 @@ public class VendorDto {
 	private List<PermissionDto> permissions;
 
 	private VendorTypeDto vendorTypeDto;
+
 	private Set<ProductDto> productDto;
 
 }

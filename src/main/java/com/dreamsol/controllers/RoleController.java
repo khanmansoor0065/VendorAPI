@@ -1,7 +1,6 @@
 package com.dreamsol.controllers;
 
 import com.dreamsol.dto.RoleDto;
-import com.dreamsol.dto.VendorTypeDto;
 import com.dreamsol.services.imp.RoleServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

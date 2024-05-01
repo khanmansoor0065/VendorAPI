@@ -8,9 +8,7 @@ import com.dreamsol.entities.VendorType;
 import com.dreamsol.exceptions.EmptyVendorListException;
 import com.dreamsol.exceptions.ResourceAlreadyExistsException;
 import com.dreamsol.exceptions.ResourceNotFoundException;
-import com.dreamsol.repositories.ProductRepo;
-import com.dreamsol.repositories.VendorRepo;
-import com.dreamsol.repositories.VendorTypeRepo;
+import com.dreamsol.repositories.*;
 import com.dreamsol.services.VendorService;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.BeanUtils;
@@ -47,13 +45,19 @@ public class VendorServiceImp implements VendorService {
 	@Autowired
 	private ExcelService helperService;
 
-	Vendor savedVendor;
+	@Autowired
+	private RoleRepo roleRepo;
 
+	@Autowired
+	private PermissionRepo permissionRepo;
+
+	Vendor savedVendor;
 
 	@Override
 	public ResponseEntity<VendorResponseDto> addVendor(VendorDto vendorDto, String path, MultipartFile file) {
 		Vendor vendorByEmail = vendorRepo.findByEmail(vendorDto.getEmail());
 		Vendor vendorByMobile = vendorRepo.findByMob(vendorDto.getMob());
+		//List<Role> roleList = roleRepo.findByRole(role.getRoles());
 
 		if (Objects.isNull(vendorByEmail) && Objects.isNull(vendorByMobile)) {
 			Vendor vendor = vendorUtility.dtoToVendor(vendorDto);

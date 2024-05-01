@@ -1,11 +1,9 @@
 package com.dreamsol.services.imp;
 
 import com.dreamsol.dto.*;
-import com.dreamsol.entities.Product;
-import com.dreamsol.entities.Role;
-import com.dreamsol.entities.Vendor;
-import com.dreamsol.entities.VendorType;
+import com.dreamsol.entities.*;
 import com.dreamsol.exceptions.ResourceNotFoundException;
+import com.dreamsol.repositories.PermissionRepo;
 import com.dreamsol.repositories.RoleRepo;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +22,10 @@ public class VendorUtility {
     @Autowired
     private RoleRepo roleRepo;
 
-    public Vendor dtoToVendor(VendorDto vendorDto) {
+    @Autowired
+    private PermissionRepo permissionRepo;
+
+    public Vendor  dtoToVendor(VendorDto vendorDto) {
         Vendor vendor = new Vendor();
         BeanUtils.copyProperties(vendorDto, vendor);
         vendor.setPassword(passwordEncoder.encode(vendorDto.getPassword()));
@@ -35,6 +36,12 @@ public class VendorUtility {
                 .map(this::roleDtoToRole)
                 .collect(Collectors.toList());
         vendor.setRoles(roleList);
+
+        List<Permission> permissionList = vendorDto.getPermissions().stream()
+                .map(this::permissionDtoToPermission)
+                .collect(Collectors.toList());
+        vendor.setPermissions(permissionList);
+
         return vendor;
     }
 
@@ -45,6 +52,13 @@ public class VendorUtility {
         throw new ResourceNotFoundException("Vendor Role", "roleName:" + roleDto.getRole(), 0);
     }
 
+    private Permission permissionDtoToPermission(PermissionDto permissionDto) {
+        Permission permission = permissionRepo.findByPermission(permissionDto.getPermission());
+        if(!Objects.isNull(permission))
+            return permission;
+        throw new ResourceNotFoundException("Vendor Permission", "permissionName:" + permissionDto.getPermission(), 0);
+    }
+
     public VendorResponseDto vendorToDto(Vendor vendor) {
         VendorResponseDto vendorDto = new VendorResponseDto();
         BeanUtils.copyProperties(vendor, vendorDto);
@@ -53,15 +67,38 @@ public class VendorUtility {
         List<RoleDto> roleDtos = vendor.getRoles().stream()
                 .map(this::roleToRoleDto)
                 .collect(Collectors.toList());
-
         vendorDto.setRoles(roleDtos);
+
+        List<PermissionDto> permissionDtos = vendor.getPermissions().stream()
+                .map(this::permissionToPermissionDto)
+                .collect(Collectors.toList());
+        vendorDto.setPermission(permissionDtos);
         return vendorDto;
     }
 
     private RoleDto roleToRoleDto(Role role) {
         RoleDto roleDto = new RoleDto();
+        Role Dbrole = roleRepo.findByRole(roleDto.getRole());
         roleDto.setRole(role.getRole());
+        List<String> endPointsCopy = role.getEndPoints()
+                .stream()
+                .map(EndpointMappings::getEndPointKey)
+                .collect(Collectors.toList());
+
+        roleDto.setEndPoints(endPointsCopy);
         return roleDto;
+    }
+
+    private PermissionDto permissionToPermissionDto(Permission permission) {
+        PermissionDto permissionDto = new PermissionDto();
+        permissionDto.setPermission(permission.getPermission());
+        List<String> endPointsCopy = permission.getEndPoints()
+                .stream()
+                .map(EndpointMappings::getEndPointKey)
+                .collect(Collectors.toList());
+
+        permissionDto.setEndPoints(endPointsCopy);
+        return permissionDto;
     }
 
     public VendorType dtoToVendorType(VendorTypeDto vendorTypeDto) {

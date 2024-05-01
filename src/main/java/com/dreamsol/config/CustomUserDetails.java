@@ -1,14 +1,18 @@
 package com.dreamsol.config;
 
+import com.dreamsol.entities.Permission;
+import com.dreamsol.entities.Role;
 import com.dreamsol.entities.Vendor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.stream.Collectors;
+import java.util.List;
 
 public class CustomUserDetails implements UserDetails {
+    
     private final Vendor vendor;
 
     public CustomUserDetails(Vendor vendor) {
@@ -17,9 +21,18 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return vendor.getRoles().stream()
-                .map(role -> new SimpleGrantedAuthority(role.getRole()))
-                .collect(Collectors.toList());
+        List<Role> roleList = vendor.getRoles();
+        List<GrantedAuthority> grantedAuthorityList = new ArrayList<>();
+        for(Role role : roleList)
+        {
+            grantedAuthorityList.add(new SimpleGrantedAuthority(role.getRole()));
+        }
+        List<Permission> permissionList = vendor.getPermissions();
+        for(Permission permission : permissionList)
+        {
+            grantedAuthorityList.add(new SimpleGrantedAuthority(permission.getPermission()));
+        }
+        return grantedAuthorityList;
     }
 
     @Override

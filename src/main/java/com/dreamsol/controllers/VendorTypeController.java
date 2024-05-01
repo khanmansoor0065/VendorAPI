@@ -4,7 +4,7 @@ import com.dreamsol.dto.ApiResponse;
 import com.dreamsol.dto.VendorTypeDto;
 import com.dreamsol.dto.VendorTypeResponse;
 import com.dreamsol.services.VendorTypeService;
-import com.dreamsol.services.imp.ExcelService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,12 +17,14 @@ import java.util.List;
 @RestController
 @RequestMapping("vendor-type")
 @Tag(name = "VendorTypeController",description = "To perform operation on VendorType")
+@SecurityRequirement(name="bearerAuth")
 public class VendorTypeController {
+
 	@Autowired
 	private VendorTypeService vendorTypeService;
 
-	@Autowired
-	private ExcelService helperService;
+//	@Autowired
+//	private ExcelService helperService;
 
 
 	@PostMapping(value = "add")
